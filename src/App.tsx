@@ -3,20 +3,22 @@ import { ConfigProvider } from 'antd';
 import LoginPage from './components/LoginPage';
 import RegistrationPage from './components/RegistrationPage';
 import ForgotPasswordPage from './components/ForgotPasswordPage';
+import MyClientsPage from './components/MyClientsPage';
 import CreateClientPage from './components/CreateClientPage';
 import QuotationListPage from './components/QuotationListPage';
 import QuotationForm from './components/QuotationForm';
 import QuotationResults from './components/QuotationResults';
-import { IQuotation, IQuotationResults, IClientInfo, IUser, IGreatLineInfo } from './types';
+import { IQuotation, IQuotationResults, IClientInfo, IUser, IGreatLineInfo, IGroupInfo } from './types';
 import { calculateQuotationTotals } from './utils/calculations';
 
-type AppView = 'login' | 'register' | 'forgotPassword' | 'createClient' | 'quotationList' | 'quotationForm' | 'quotationResults';
+type AppView = 'login' | 'register' | 'forgotPassword' | 'myClients' | 'createClient' | 'quotationList' | 'quotationForm' | 'quotationResults';
 
 function App() {
   const [currentView, setCurrentView] = useState<AppView>('login');
   const [currentUser, setCurrentUser] = useState<IUser | null>(null);
   const [greatLineInfo, setGreatLineInfo] = useState<IGreatLineInfo | null>(null);
   const [currentClient, setCurrentClient] = useState<IClientInfo | null>(null);
+  const [currentGroupInfo, setCurrentGroupInfo] = useState<IGroupInfo | null>(null);
   const [quotationResults, setQuotationResults] = useState<IQuotationResults | null>(null);
   const [selectedQuotationId, setSelectedQuotationId] = useState<string | null>(null);
 
@@ -37,7 +39,7 @@ function App() {
       email: user.email
     };
     setGreatLineInfo(mockGreatLineInfo);
-    setCurrentView('createClient');
+    setCurrentView('myClients');
   };
 
   const handleRegister = (greatLineData: {
@@ -63,7 +65,7 @@ function App() {
       email: greatLineData.email
     };
     setGreatLineInfo(greatLineInfo);
-    setCurrentView('createClient');
+    setCurrentView('myClients');
   };
 
   const handleSwitchToRegister = () => {
@@ -78,8 +80,13 @@ function App() {
     setCurrentView('forgotPassword');
   };
 
-  const handleClientSubmit = (client: IClientInfo) => {
+  const handleGoToCreateClient = () => {
+    setCurrentView('createClient');
+  };
+
+  const handleClientSubmit = (client: IClientInfo, groupInfo: IGroupInfo) => {
     setCurrentClient(client);
+    setCurrentGroupInfo(groupInfo);
     setCurrentView('quotationList');
   };
 
@@ -101,19 +108,13 @@ function App() {
   };
 
   const generateMockResults = () => {
-    if (!currentClient || !greatLineInfo) return;
+    if (!currentClient || !greatLineInfo || !currentGroupInfo) return;
 
     const mockResults: IQuotationResults = {
       id: '1',
       client: currentClient,
       greatLineInfo: greatLineInfo,
-      groupInfo: {
-        number: 'GRP001',
-        name: 'European Tour Group A',
-        startDate: new Date('2024-03-15'),
-        endDate: new Date('2024-03-25'),
-        type: 'single'
-      },
+      groupInfo: currentGroupInfo,
       groupQuote: {
         quotes: [
           {
@@ -248,7 +249,7 @@ function App() {
   };
 
   const handleQuotationSubmit = (quotation: IQuotation) => {
-    if (!currentClient || !greatLineInfo) return;
+    if (!currentClient || !greatLineInfo || !currentGroupInfo) return;
 
     const calculations = calculateQuotationTotals(quotation);
     
@@ -256,11 +257,9 @@ function App() {
       client: currentClient,
       greatLineInfo: greatLineInfo,
       groupInfo: {
-        number: quotation.groupNumber,
-        name: quotation.groupName,
+        ...currentGroupInfo,
         startDate: quotation.quotes.length > 0 ? quotation.quotes[0].date : quotation.date,
         endDate: quotation.quotes.length > 0 ? quotation.quotes[quotation.quotes.length - 1].date : quotation.date,
-        type: 'single'
       },
       groupQuote: {
         quotes: [
@@ -328,6 +327,14 @@ function App() {
     setCurrentView('quotationResults');
   };
 
+  const handleBackToMyClients = () => {
+    setCurrentView('myClients');
+    setQuotationResults(null);
+    setSelectedQuotationId(null);
+    setCurrentClient(null);
+    setCurrentGroupInfo(null);
+  };
+
   const handleBackToList = () => {
     setCurrentView('quotationList');
     setQuotationResults(null);
@@ -380,27 +387,45 @@ function App() {
             onBackToLogin={handleSwitchToLogin}
           />
         )}
+
+        {currentView === 'myClients' && greatLineInfo && (
+          <MyClientsPage
+            greatLineInfo={greatLineInfo}
+            onCreateClient={handleGoToCreateClient}
+            onViewClient={(client, groupInfo) => {
+              setCurrentClient(client);
+              setCurrentGroupInfo(groupInfo);
+              setCurrentView('quotationList');
+            }}
+          />
+        )}
         
         {currentView === 'createClient' && (
           <CreateClientPage onSubmit={handleClientSubmit} />
         )}
         
-        {currentView === 'quotationList' && currentClient && (
+        {currentView === 'quotationList' && currentClient && currentGroupInfo && (
           <QuotationListPage
             client={currentClient}
+            groupInfo={currentGroupInfo}
             onAddNew={handleAddNewQuotation}
             onViewQuotation={handleViewQuotation}
+            onBack={handleBackToMyClients}
           />
         )}
         
         {currentView === 'quotationForm' && (
-          <QuotationForm onSubmit={handleQuotationSubmit} />
+          <QuotationForm 
+            onSubmit={handleQuotationSubmit}
+            onBack={handleBackToList}
+          />
         )}
         
         {currentView === 'quotationResults' && quotationResults && (
           <QuotationResults
             results={quotationResults}
             onBack={selectedQuotationId ? handleBackToList : handleBackToForm}
+            onBackToMyClients={handleBackToMyClients}
           />
         )}
       </div>

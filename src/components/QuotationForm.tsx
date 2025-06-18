@@ -24,7 +24,8 @@ import {
   UserOutlined,
   CarOutlined,
   SaveOutlined,
-  InfoCircleOutlined
+  InfoCircleOutlined,
+  ArrowLeftOutlined
 } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import { IQuotation, IQuote } from '../types';
@@ -35,9 +36,10 @@ const { TextArea } = Input;
 
 interface QuotationFormProps {
   onSubmit: (quotation: IQuotation) => void;
+  onBack: () => void;
 }
 
-const QuotationForm: React.FC<QuotationFormProps> = ({ onSubmit }) => {
+const QuotationForm: React.FC<QuotationFormProps> = ({ onSubmit, onBack }) => {
   const [form] = Form.useForm();
   const [quotes, setQuotes] = useState<IQuote[]>([]);
 
@@ -154,13 +156,27 @@ const QuotationForm: React.FC<QuotationFormProps> = ({ onSubmit }) => {
               color: 'white'
             }}
           >
-            <Title level={1} style={{ color: 'white', margin: 0, fontSize: '2.5rem' }}>
-              <CalendarOutlined style={{ marginRight: '16px' }} />
-              Travel Quotation System
-            </Title>
-            <Text style={{ color: 'rgba(255,255,255,0.8)', fontSize: '16px' }}>
-              Create detailed travel quotations with precision and elegance
-            </Text>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div>
+                <Title level={1} style={{ color: 'white', margin: 0, fontSize: '2.5rem' }}>
+                  <CalendarOutlined style={{ marginRight: '16px' }} />
+                  Travel Quotation System
+                </Title>
+                <Text style={{ color: 'rgba(255,255,255,0.8)', fontSize: '16px' }}>
+                  Create detailed travel quotations with precision and elegance
+                </Text>
+              </div>
+              <Button
+                type="primary"
+                ghost
+                icon={<ArrowLeftOutlined />}
+                onClick={onBack}
+                size="large"
+                style={{ borderColor: 'white', color: 'white' }}
+              >
+                Go Back
+              </Button>
+            </div>
           </div>
 
           <Form

@@ -23,7 +23,8 @@ import {
   CoffeeOutlined,
   CameraOutlined,
   TeamOutlined,
-  EnvironmentOutlined
+  EnvironmentOutlined,
+  HomeOutlined
 } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import { IQuotationResults } from '../types';
@@ -33,9 +34,10 @@ const { Title, Text } = Typography;
 interface QuotationResultsProps {
   results: IQuotationResults;
   onBack: () => void;
+  onBackToMyClients: () => void;
 }
 
-const QuotationResults: React.FC<QuotationResultsProps> = ({ results, onBack }) => {
+const QuotationResults: React.FC<QuotationResultsProps> = ({ results, onBack, onBackToMyClients }) => {
   const formatCurrency = (amount: number) => `€${amount.toLocaleString()}`;
   const formatDate = (date: Date) => dayjs(date).format('MMM DD, YYYY');
 
@@ -239,16 +241,28 @@ const QuotationResults: React.FC<QuotationResultsProps> = ({ results, onBack }) 
                   Complete travel quotation breakdown and analysis
                 </Text>
               </div>
-              <Button
-                type="primary"
-                ghost
-                icon={<ArrowLeftOutlined />}
-                onClick={onBack}
-                size="large"
-                style={{ borderColor: 'white', color: 'white' }}
-              >
-                Back to Form
-              </Button>
+              <Space>
+                <Button
+                  type="primary"
+                  ghost
+                  icon={<HomeOutlined />}
+                  onClick={onBackToMyClients}
+                  size="large"
+                  style={{ borderColor: 'white', color: 'white' }}
+                >
+                  My Clients
+                </Button>
+                <Button
+                  type="primary"
+                  ghost
+                  icon={<ArrowLeftOutlined />}
+                  onClick={onBack}
+                  size="large"
+                  style={{ borderColor: 'white', color: 'white' }}
+                >
+                  Back
+                </Button>
+              </Space>
             </div>
           </div>
 
