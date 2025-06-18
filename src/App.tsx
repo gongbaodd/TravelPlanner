@@ -1,18 +1,21 @@
 import React, { useState } from 'react';
 import { ConfigProvider } from 'antd';
 import LoginPage from './components/LoginPage';
+import RegistrationPage from './components/RegistrationPage';
+import ForgotPasswordPage from './components/ForgotPasswordPage';
 import CreateClientPage from './components/CreateClientPage';
 import QuotationListPage from './components/QuotationListPage';
 import QuotationForm from './components/QuotationForm';
 import QuotationResults from './components/QuotationResults';
-import { IQuotation, IQuotationResults, IClientInfo, IUser } from './types';
+import { IQuotation, IQuotationResults, IClientInfo, IUser, IGreatLineInfo } from './types';
 import { calculateQuotationTotals } from './utils/calculations';
 
-type AppView = 'login' | 'createClient' | 'quotationList' | 'quotationForm' | 'quotationResults';
+type AppView = 'login' | 'register' | 'forgotPassword' | 'createClient' | 'quotationList' | 'quotationForm' | 'quotationResults';
 
 function App() {
   const [currentView, setCurrentView] = useState<AppView>('login');
   const [currentUser, setCurrentUser] = useState<IUser | null>(null);
+  const [greatLineInfo, setGreatLineInfo] = useState<IGreatLineInfo | null>(null);
   const [currentClient, setCurrentClient] = useState<IClientInfo | null>(null);
   const [quotationResults, setQuotationResults] = useState<IQuotationResults | null>(null);
   const [selectedQuotationId, setSelectedQuotationId] = useState<string | null>(null);
@@ -25,7 +28,54 @@ function App() {
       name: email.split('@')[0]
     };
     setCurrentUser(user);
+    
+    // Mock Great Line info for login
+    const mockGreatLineInfo: IGreatLineInfo = {
+      contactName: user.name,
+      department: 'Travel Operations',
+      tel: '+1-555-0123',
+      email: user.email
+    };
+    setGreatLineInfo(mockGreatLineInfo);
     setCurrentView('createClient');
+  };
+
+  const handleRegister = (greatLineData: {
+    contactName: string;
+    department: string;
+    tel: string;
+    email: string;
+    password: string;
+  }) => {
+    // Create user from Great Line registration data
+    const user: IUser = {
+      id: Date.now().toString(),
+      email: greatLineData.email,
+      name: greatLineData.contactName
+    };
+    setCurrentUser(user);
+    
+    // Store Great Line info
+    const greatLineInfo: IGreatLineInfo = {
+      contactName: greatLineData.contactName,
+      department: greatLineData.department,
+      tel: greatLineData.tel,
+      email: greatLineData.email
+    };
+    setGreatLineInfo(greatLineInfo);
+    setCurrentView('createClient');
+  };
+
+  const handleSwitchToRegister = () => {
+    setCurrentView('register');
+  };
+
+  const handleSwitchToLogin = () => {
+    setCurrentView('login');
+  };
+
+  const handleSwitchToForgotPassword = () => {
+    setCurrentView('forgotPassword');
   };
 
   const handleClientSubmit = (client: IClientInfo) => {
@@ -51,17 +101,12 @@ function App() {
   };
 
   const generateMockResults = () => {
-    if (!currentClient) return;
+    if (!currentClient || !greatLineInfo) return;
 
     const mockResults: IQuotationResults = {
       id: '1',
       client: currentClient,
-      greatLineInfo: {
-        contactName: currentUser?.name || 'Travel Operator',
-        department: 'Travel Operations',
-        tel: '+1-555-0123',
-        email: currentUser?.email || 'operations@greatline.com'
-      },
+      greatLineInfo: greatLineInfo,
       groupInfo: {
         number: 'GRP001',
         name: 'European Tour Group A',
@@ -203,18 +248,13 @@ function App() {
   };
 
   const handleQuotationSubmit = (quotation: IQuotation) => {
-    if (!currentClient) return;
+    if (!currentClient || !greatLineInfo) return;
 
     const calculations = calculateQuotationTotals(quotation);
     
     const results: IQuotationResults = {
       client: currentClient,
-      greatLineInfo: {
-        contactName: quotation.operator,
-        department: 'Travel Operations',
-        tel: '+1-555-0123',
-        email: currentUser?.email || 'operations@greatline.com'
-      },
+      greatLineInfo: greatLineInfo,
       groupInfo: {
         number: quotation.groupNumber,
         name: quotation.groupName,
@@ -321,7 +361,24 @@ function App() {
     >
       <div className="App">
         {currentView === 'login' && (
-          <LoginPage onLogin={handleLogin} />
+          <LoginPage 
+            onLogin={handleLogin} 
+            onSwitchToRegister={handleSwitchToRegister}
+            onSwitchToForgotPassword={handleSwitchToForgotPassword}
+          />
+        )}
+
+        {currentView === 'register' && (
+          <RegistrationPage 
+            onRegister={handleRegister} 
+            onSwitchToLogin={handleSwitchToLogin}
+          />
+        )}
+
+        {currentView === 'forgotPassword' && (
+          <ForgotPasswordPage 
+            onBackToLogin={handleSwitchToLogin}
+          />
         )}
         
         {currentView === 'createClient' && (

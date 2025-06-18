@@ -2,13 +2,15 @@ import React, { useState } from 'react';
 import { Card, Form, Input, Button, Typography, message, Space } from 'antd';
 import { UserOutlined, LockOutlined, LoginOutlined } from '@ant-design/icons';
 
-const { Title, Text } = Typography;
+const { Title, Text, Link } = Typography;
 
 interface LoginPageProps {
   onLogin: (email: string, password: string) => void;
+  onSwitchToRegister: () => void;
+  onSwitchToForgotPassword: () => void;
 }
 
-const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
+const LoginPage: React.FC<LoginPageProps> = ({ onLogin, onSwitchToRegister, onSwitchToForgotPassword }) => {
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (values: { email: string; password: string }) => {
@@ -107,7 +109,19 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
             />
           </Form.Item>
 
-          <Form.Item style={{ marginBottom: 0 }}>
+          <div style={{ textAlign: 'right', marginBottom: '16px' }}>
+            <Link 
+              onClick={onSwitchToForgotPassword}
+              style={{ 
+                color: '#1890ff',
+                fontSize: '14px'
+              }}
+            >
+              Forgot password?
+            </Link>
+          </div>
+
+          <Form.Item style={{ marginBottom: '16px' }}>
             <Button
               type="primary"
               htmlType="submit"
@@ -129,8 +143,22 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
         </Form>
 
         <div style={{ textAlign: 'center', marginTop: '24px' }}>
-          <Text type="secondary" style={{ fontSize: '12px' }}>
-            Demo credentials: any email and password
+          <Text type="secondary">
+            Don't have an account?{' '}
+            <Link 
+              onClick={onSwitchToRegister}
+              style={{ 
+                color: '#1890ff',
+                fontWeight: 'bold',
+                cursor: 'pointer'
+              }}
+            >
+              Create Account
+            </Link>
+          </Text>
+          <br />
+          <Text type="secondary" style={{ fontSize: '12px', marginTop: '8px', display: 'block' }}>
+            Demo: Use any email and password to login
           </Text>
         </div>
       </Card>
