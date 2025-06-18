@@ -1,31 +1,45 @@
 import React, { useState } from 'react';
-import { Calendar, Plus, Trash2, Save } from 'lucide-react';
-import { IQuotation, IQuote, ILocalGuide, IPrice, IppPrice, IGroupPrice, IMeal, IAttraction } from '../types';
+import {
+  Form,
+  Input,
+  InputNumber,
+  DatePicker,
+  Select,
+  Button,
+  Card,
+  Row,
+  Col,
+  Divider,
+  Space,
+  Typography,
+  Collapse,
+  Switch,
+  message,
+  Tooltip
+} from 'antd';
+import {
+  PlusOutlined,
+  DeleteOutlined,
+  CalendarOutlined,
+  UserOutlined,
+  CarOutlined,
+  SaveOutlined,
+  InfoCircleOutlined
+} from '@ant-design/icons';
+import dayjs from 'dayjs';
+import { IQuotation, IQuote } from '../types';
+
+const { Title, Text } = Typography;
+const { Panel } = Collapse;
+const { TextArea } = Input;
 
 interface QuotationFormProps {
   onSubmit: (quotation: IQuotation) => void;
 }
 
 const QuotationForm: React.FC<QuotationFormProps> = ({ onSubmit }) => {
-  const [quotation, setQuotation] = useState<IQuotation>({
-    allNum: 0,
-    leadNum: 0,
-    carType: '',
-    singleRoomFactor: 1,
-    groupName: '',
-    groupNumber: '',
-    operator: '',
-    date: new Date(),
-    quotes: [],
-    details: {
-      transport: '',
-      hotel: '',
-      meal: '',
-      attraction: '',
-      guide: '',
-      extra: ''
-    }
-  });
+  const [form] = Form.useForm();
+  const [quotes, setQuotes] = useState<IQuote[]>([]);
 
   const createEmptyQuote = (): IQuote => ({
     date: new Date(),
@@ -62,464 +76,597 @@ const QuotationForm: React.FC<QuotationFormProps> = ({ onSubmit }) => {
   });
 
   const addQuote = () => {
-    setQuotation(prev => ({
-      ...prev,
-      quotes: [...prev.quotes, createEmptyQuote()]
-    }));
+    const newQuote = createEmptyQuote();
+    setQuotes([...quotes, newQuote]);
+    message.success('New daily quote added');
   };
 
   const removeQuote = (index: number) => {
-    setQuotation(prev => ({
-      ...prev,
-      quotes: prev.quotes.filter((_, i) => i !== index)
-    }));
+    const newQuotes = quotes.filter((_, i) => i !== index);
+    setQuotes(newQuotes);
+    message.success('Daily quote removed');
   };
 
   const updateQuote = (index: number, field: string, value: any) => {
-    setQuotation(prev => ({
-      ...prev,
-      quotes: prev.quotes.map((quote, i) => 
-        i === index ? { ...quote, [field]: value } : quote
-      )
-    }));
+    const newQuotes = [...quotes];
+    if (field.includes('.')) {
+      const fields = field.split('.');
+      let current: any = newQuotes[index];
+      for (let i = 0; i < fields.length - 1; i++) {
+        current = current[fields[i]];
+      }
+      current[fields[fields.length - 1]] = value;
+    } else {
+      (newQuotes[index] as any)[field] = value;
+    }
+    setQuotes(newQuotes);
   };
 
-  const updateNestedQuoteField = (index: number, path: string[], value: any) => {
-    setQuotation(prev => ({
-      ...prev,
-      quotes: prev.quotes.map((quote, i) => {
-        if (i === index) {
-          const updatedQuote = { ...quote };
-          let current: any = updatedQuote;
-          
-          for (let j = 0; j < path.length - 1; j++) {
-            current = current[path[j]];
-          }
-          current[path[path.length - 1]] = value;
-          
-          return updatedQuote;
-        }
-        return quote;
-      })
-    }));
+  const handleMealChange = (quoteIndex: number, mealType: 'breakfast' | 'lunch' | 'dinner', enabled: boolean, price?: number) => {
+    const newQuotes = [...quotes];
+    if (enabled && price !== undefined) {
+      newQuotes[quoteIndex].meals[mealType] = {
+        ppPrice: { count: price, currency: 'EUR', type: 'Person' }
+      };
+    } else {
+      newQuotes[quoteIndex].meals[mealType] = null;
+    }
+    setQuotes(newQuotes);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    onSubmit(quotation);
+  const onFinish = (values: any) => {
+    const quotationData: IQuotation = {
+      ...values,
+      date: values.date.toDate(),
+      quotes: quotes.map(quote => ({
+        ...quote,
+        date: dayjs(quote.date).toDate()
+      })),
+      details: values.details || {
+        transport: '',
+        hotel: '',
+        meal: '',
+        attraction: '',
+        guide: '',
+        extra: ''
+      }
+    };
+
+    onSubmit(quotationData);
+    message.success('Quotation generated successfully!');
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 py-8">
-      <div className="max-w-6xl mx-auto px-4">
-        <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
-          <div className="bg-gradient-to-r from-blue-600 to-indigo-600 px-8 py-6">
-            <h1 className="text-3xl font-bold text-white">Travel Quotation System</h1>
-            <p className="text-blue-100 mt-2">Create detailed travel quotations with precision</p>
+    <div style={{ minHeight: '100vh', background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', padding: '24px' }}>
+      <div style={{ maxWidth: '1400px', margin: '0 auto' }}>
+        <Card
+          style={{
+            borderRadius: '16px',
+            boxShadow: '0 20px 40px rgba(0,0,0,0.1)',
+            overflow: 'hidden'
+          }}
+        >
+          <div
+            style={{
+              background: 'linear-gradient(135deg, #1890ff 0%, #096dd9 100%)',
+              margin: '-24px -24px 24px -24px',
+              padding: '32px 24px',
+              color: 'white'
+            }}
+          >
+            <Title level={1} style={{ color: 'white', margin: 0, fontSize: '2.5rem' }}>
+              <CalendarOutlined style={{ marginRight: '16px' }} />
+              Travel Quotation System
+            </Title>
+            <Text style={{ color: 'rgba(255,255,255,0.8)', fontSize: '16px' }}>
+              Create detailed travel quotations with precision and elegance
+            </Text>
           </div>
 
-          <form onSubmit={handleSubmit} className="p-8">
+          <Form
+            form={form}
+            layout="vertical"
+            onFinish={onFinish}
+            initialValues={{
+              date: dayjs(),
+              singleRoomFactor: 1,
+              allNum: 0,
+              leadNum: 0
+            }}
+          >
             {/* Basic Information */}
-            <div className="mb-8">
-              <h2 className="text-2xl font-semibold text-gray-800 mb-6 flex items-center">
-                <Calendar className="mr-3 text-blue-600" size={24} />
-                Basic Information
-              </h2>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Total Number</label>
-                  <input
-                    type="number"
-                    value={quotation.allNum}
-                    onChange={(e) => setQuotation(prev => ({ ...prev, allNum: parseInt(e.target.value) || 0 }))}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-                    required
-                  />
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Lead Number</label>
-                  <input
-                    type="number"
-                    value={quotation.leadNum}
-                    onChange={(e) => setQuotation(prev => ({ ...prev, leadNum: parseInt(e.target.value) || 0 }))}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-                    required
-                  />
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Car Type</label>
-                  <input
-                    type="text"
-                    value={quotation.carType}
-                    onChange={(e) => setQuotation(prev => ({ ...prev, carType: e.target.value }))}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-                    required
-                  />
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Single Room Factor</label>
-                  <input
-                    type="number"
-                    step="0.1"
-                    value={quotation.singleRoomFactor}
-                    onChange={(e) => setQuotation(prev => ({ ...prev, singleRoomFactor: parseFloat(e.target.value) || 1 }))}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-                    required
-                  />
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Group Name</label>
-                  <input
-                    type="text"
-                    value={quotation.groupName}
-                    onChange={(e) => setQuotation(prev => ({ ...prev, groupName: e.target.value }))}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-                    required
-                  />
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Group Number</label>
-                  <input
-                    type="text"
-                    value={quotation.groupNumber}
-                    onChange={(e) => setQuotation(prev => ({ ...prev, groupNumber: e.target.value }))}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-                    required
-                  />
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Operator</label>
-                  <input
-                    type="text"
-                    value={quotation.operator}
-                    onChange={(e) => setQuotation(prev => ({ ...prev, operator: e.target.value }))}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-                    required
-                  />
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Date</label>
-                  <input
-                    type="date"
-                    value={quotation.date.toISOString().split('T')[0]}
-                    onChange={(e) => setQuotation(prev => ({ ...prev, date: new Date(e.target.value) }))}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-                    required
-                  />
-                </div>
-              </div>
-            </div>
+            <Card
+              title={
+                <Space>
+                  <UserOutlined style={{ color: '#1890ff' }} />
+                  <span>Basic Information</span>
+                </Space>
+              }
+              style={{ marginBottom: '24px' }}
+              headStyle={{ borderBottom: '2px solid #f0f0f0' }}
+            >
+              <Row gutter={[24, 16]}>
+                <Col xs={24} sm={12} md={8}>
+                  <Form.Item
+                    label="Total Number of People"
+                    name="allNum"
+                    rules={[{ required: true, message: 'Please enter total number' }]}
+                  >
+                    <InputNumber
+                      min={1}
+                      style={{ width: '100%' }}
+                      size="large"
+                      placeholder="Enter total number"
+                    />
+                  </Form.Item>
+                </Col>
+                <Col xs={24} sm={12} md={8}>
+                  <Form.Item
+                    label="Lead Number"
+                    name="leadNum"
+                    rules={[{ required: true, message: 'Please enter lead number' }]}
+                  >
+                    <InputNumber
+                      min={0}
+                      style={{ width: '100%' }}
+                      size="large"
+                      placeholder="Enter lead number"
+                    />
+                  </Form.Item>
+                </Col>
+                <Col xs={24} sm={12} md={8}>
+                  <Form.Item
+                    label="Car Type"
+                    name="carType"
+                    rules={[{ required: true, message: 'Please enter car type' }]}
+                  >
+                    <Input size="large" placeholder="e.g., Bus, Van, Car" />
+                  </Form.Item>
+                </Col>
+                <Col xs={24} sm={12} md={8}>
+                  <Form.Item
+                    label={
+                      <Space>
+                        Single Room Factor
+                        <Tooltip title="Multiplier for single room pricing">
+                          <InfoCircleOutlined />
+                        </Tooltip>
+                      </Space>
+                    }
+                    name="singleRoomFactor"
+                  >
+                    <InputNumber
+                      min={0.1}
+                      step={0.1}
+                      style={{ width: '100%' }}
+                      size="large"
+                      placeholder="1.0"
+                    />
+                  </Form.Item>
+                </Col>
+                <Col xs={24} sm={12} md={8}>
+                  <Form.Item
+                    label="Group Name"
+                    name="groupName"
+                    rules={[{ required: true, message: 'Please enter group name' }]}
+                  >
+                    <Input size="large" placeholder="Enter group name" />
+                  </Form.Item>
+                </Col>
+                <Col xs={24} sm={12} md={8}>
+                  <Form.Item
+                    label="Group Number"
+                    name="groupNumber"
+                    rules={[{ required: true, message: 'Please enter group number' }]}
+                  >
+                    <Input size="large" placeholder="Enter group number" />
+                  </Form.Item>
+                </Col>
+                <Col xs={24} sm={12} md={8}>
+                  <Form.Item
+                    label="Operator"
+                    name="operator"
+                    rules={[{ required: true, message: 'Please enter operator name' }]}
+                  >
+                    <Input size="large" placeholder="Enter operator name" />
+                  </Form.Item>
+                </Col>
+                <Col xs={24} sm={12} md={8}>
+                  <Form.Item
+                    label="Date"
+                    name="date"
+                    rules={[{ required: true, message: 'Please select date' }]}
+                  >
+                    <DatePicker size="large" style={{ width: '100%' }} />
+                  </Form.Item>
+                </Col>
+              </Row>
+            </Card>
 
             {/* Daily Quotes */}
-            <div className="mb-8">
-              <div className="flex items-center justify-between mb-6">
-                <h2 className="text-2xl font-semibold text-gray-800">Daily Quotes</h2>
-                <button
-                  type="button"
+            <Card
+              title={
+                <Space>
+                  <CalendarOutlined style={{ color: '#52c41a' }} />
+                  <span>Daily Quotes</span>
+                </Space>
+              }
+              extra={
+                <Button
+                  type="primary"
+                  icon={<PlusOutlined />}
                   onClick={addQuote}
-                  className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors flex items-center"
+                  size="large"
                 >
-                  <Plus size={20} className="mr-2" />
-                  Add Quote
-                </button>
-              </div>
-
-              {quotation.quotes.map((quote, index) => (
-                <div key={index} className="border border-gray-200 rounded-xl p-6 mb-6 bg-gray-50">
-                  <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-lg font-semibold text-gray-800">Day {index + 1}</h3>
-                    <button
-                      type="button"
-                      onClick={() => removeQuote(index)}
-                      className="text-red-600 hover:text-red-800 transition-colors"
-                    >
-                      <Trash2 size={20} />
-                    </button>
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Date</label>
-                      <input
-                        type="date"
-                        value={quote.date.toISOString().split('T')[0]}
-                        onChange={(e) => updateQuote(index, 'date', new Date(e.target.value))}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                      />
-                    </div>
-                    
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Day Count</label>
-                      <input
-                        type="number"
-                        value={quote.dayCount}
-                        onChange={(e) => updateQuote(index, 'dayCount', parseInt(e.target.value) || 1)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                      />
-                    </div>
-                    
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">City Name</label>
-                      <input
-                        type="text"
-                        value={quote.cityName}
-                        onChange={(e) => updateQuote(index, 'cityName', e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                        placeholder="City name, FLY, or EMPTY DRIVING"
-                      />
-                    </div>
-                    
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Transport Cost (EUR)</label>
-                      <input
-                        type="number"
-                        value={quote.transportCost.count}
-                        onChange={(e) => updateNestedQuoteField(index, ['transportCost', 'count'], parseInt(e.target.value) || 0)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                      />
-                    </div>
-                    
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Hotel Stars</label>
-                      <select
-                        value={quote.hotel.stars}
-                        onChange={(e) => updateNestedQuoteField(index, ['hotel', 'stars'], parseInt(e.target.value))}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                      >
-                        {[1, 2, 3, 4, 5].map(star => (
-                          <option key={star} value={star}>{star} Star</option>
-                        ))}
-                      </select>
-                    </div>
-                    
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Hotel Reference</label>
-                      <input
-                        type="text"
-                        value={quote.hotel.reference}
-                        onChange={(e) => updateNestedQuoteField(index, ['hotel', 'reference'], e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                      />
-                    </div>
-                    
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Hotel PP Price (EUR)</label>
-                      <input
-                        type="number"
-                        value={quote.hotel.ppPrice.count}
-                        onChange={(e) => updateNestedQuoteField(index, ['hotel', 'ppPrice', 'count'], parseInt(e.target.value) || 0)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                      />
-                    </div>
-                    
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Single Room Count</label>
-                      <input
-                        type="number"
-                        value={quote.hotel.singleRoom.count}
-                        onChange={(e) => updateNestedQuoteField(index, ['hotel', 'singleRoom', 'count'], parseInt(e.target.value) || 0)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                      />
-                    </div>
-                    
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Single Room PP Price (EUR)</label>
-                      <input
-                        type="number"
-                        value={quote.hotel.singleRoom.ppPrice.count}
-                        onChange={(e) => updateNestedQuoteField(index, ['hotel', 'singleRoom', 'ppPrice', 'count'], parseInt(e.target.value) || 0)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="border-t pt-4">
-                    <h4 className="text-md font-semibold text-gray-700 mb-3">Meals</h4>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                      {['breakfast', 'lunch', 'dinner'].map((mealType) => (
-                        <div key={mealType}>
-                          <label className="block text-sm font-medium text-gray-700 mb-1 capitalize">
-                            {mealType} Price (EUR)
-                          </label>
-                          <input
-                            type="number"
-                            value={quote.meals[mealType as keyof typeof quote.meals]?.ppPrice.count || ''}
-                            onChange={(e) => {
-                              const value = parseInt(e.target.value) || 0;
-                              if (value > 0) {
-                                updateNestedQuoteField(index, ['meals', mealType], {
-                                  ppPrice: { count: value, currency: 'EUR', type: 'Person' }
-                                });
-                              } else {
-                                updateNestedQuoteField(index, ['meals', mealType], null);
-                              }
-                            }}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                            placeholder="0 for no meal"
-                          />
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div className="border-t pt-4 mt-4">
-                    <h4 className="text-md font-semibold text-gray-700 mb-3">Additional Information</h4>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Attraction Name</label>
-                        <input
-                          type="text"
-                          value={quote.attractions.name}
-                          onChange={(e) => updateNestedQuoteField(index, ['attractions', 'name'], e.target.value)}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                        />
-                      </div>
-                      
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Attraction PP Price (EUR)</label>
-                        <input
-                          type="number"
-                          value={quote.attractions.ppPrice.count}
-                          onChange={(e) => updateNestedQuoteField(index, ['attractions', 'ppPrice', 'count'], parseInt(e.target.value) || 0)}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                        />
-                      </div>
-                      
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Guide Price (EUR)</label>
-                        <input
-                          type="number"
-                          value={quote.guide.count}
-                          onChange={(e) => updateNestedQuoteField(index, ['guide', 'count'], parseInt(e.target.value) || 0)}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                        />
-                      </div>
-                      
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Water PP Price (EUR)</label>
-                        <input
-                          type="number"
-                          value={quote.water.count}
-                          onChange={(e) => updateNestedQuoteField(index, ['water', 'count'], parseInt(e.target.value) || 0)}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                        />
-                      </div>
-                      
-                      <div className="md:col-span-2">
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Extra Notes</label>
-                        <textarea
-                          value={quote.extra}
-                          onChange={(e) => updateQuote(index, 'extra', e.target.value)}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                          rows={2}
-                        />
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="border-t pt-4 mt-4">
-                    <h4 className="text-md font-semibold text-gray-700 mb-3">Local Guide</h4>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Tip Amount (EUR)</label>
-                        <input
-                          type="number"
-                          value={quote.localGuide.tip.count}
-                          onChange={(e) => updateNestedQuoteField(index, ['localGuide', 'tip', 'count'], parseInt(e.target.value) || 0)}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                        />
-                      </div>
-                      
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Tip Type</label>
-                        <select
-                          value={quote.localGuide.tip.type}
-                          onChange={(e) => updateNestedQuoteField(index, ['localGuide', 'tip', 'type'], e.target.value)}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                        >
-                          <option value="Person">Person</option>
-                          <option value="Group">Group</option>
-                        </select>
-                      </div>
-                      
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Salary (EUR)</label>
-                        <input
-                          type="number"
-                          value={quote.localGuide.salary.count}
-                          onChange={(e) => updateNestedQuoteField(index, ['localGuide', 'salary', 'count'], parseInt(e.target.value) || 0)}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                        />
-                      </div>
-                      
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Accommodation (EUR)</label>
-                        <input
-                          type="number"
-                          value={quote.localGuide.accomadation.count}
-                          onChange={(e) => updateNestedQuoteField(index, ['localGuide', 'accomadation', 'count'], parseInt(e.target.value) || 0)}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                        />
-                      </div>
-                      
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Meal (EUR)</label>
-                        <input
-                          type="number"
-                          value={quote.localGuide.meal.count}
-                          onChange={(e) => updateNestedQuoteField(index, ['localGuide', 'meal', 'count'], parseInt(e.target.value) || 0)}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                        />
-                      </div>
-                    </div>
-                  </div>
+                  Add Daily Quote
+                </Button>
+              }
+              style={{ marginBottom: '24px' }}
+              headStyle={{ borderBottom: '2px solid #f0f0f0' }}
+            >
+              {quotes.length === 0 ? (
+                <div style={{ textAlign: 'center', padding: '40px', color: '#999' }}>
+                  <CalendarOutlined style={{ fontSize: '48px', marginBottom: '16px' }} />
+                  <div>No daily quotes added yet. Click "Add Daily Quote" to get started.</div>
                 </div>
-              ))}
-            </div>
+              ) : (
+                <Collapse accordion>
+                  {quotes.map((quote, index) => (
+                    <Panel
+                      header={
+                        <Space>
+                          <strong>Day {index + 1}</strong>
+                          <Text type="secondary">
+                            {quote.cityName || 'No city specified'} - {dayjs(quote.date).format('MMM DD, YYYY')}
+                          </Text>
+                        </Space>
+                      }
+                      key={index}
+                      extra={
+                        <Button
+                          type="text"
+                          danger
+                          icon={<DeleteOutlined />}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            removeQuote(index);
+                          }}
+                        />
+                      }
+                    >
+                      <Row gutter={[16, 16]}>
+                        {/* Basic Day Info */}
+                        <Col span={24}>
+                          <Title level={5}>Basic Information</Title>
+                        </Col>
+                        <Col xs={24} sm={8}>
+                          <label>Date</label>
+                          <DatePicker
+                            value={dayjs(quote.date)}
+                            onChange={(date) => updateQuote(index, 'date', date?.toDate())}
+                            style={{ width: '100%' }}
+                          />
+                        </Col>
+                        <Col xs={24} sm={8}>
+                          <label>Day Count</label>
+                          <InputNumber
+                            min={1}
+                            value={quote.dayCount}
+                            onChange={(value) => updateQuote(index, 'dayCount', value)}
+                            style={{ width: '100%' }}
+                          />
+                        </Col>
+                        <Col xs={24} sm={8}>
+                          <label>City Name</label>
+                          <Select
+                            value={quote.cityName}
+                            onChange={(value) => updateQuote(index, 'cityName', value)}
+                            style={{ width: '100%' }}
+                            showSearch
+                            allowClear
+                            placeholder="Select or enter city"
+                            options={[
+                              { value: 'FLY', label: 'FLY' },
+                              { value: 'EMPTY DRIVING', label: 'EMPTY DRIVING' }
+                            ]}
+                            dropdownRender={(menu) => (
+                              <div>
+                                {menu}
+                                <Divider style={{ margin: '8px 0' }} />
+                                <Input
+                                  placeholder="Enter custom city name"
+                                  onPressEnter={(e) => {
+                                    const value = (e.target as HTMLInputElement).value;
+                                    if (value) {
+                                      updateQuote(index, 'cityName', value);
+                                    }
+                                  }}
+                                />
+                              </div>
+                            )}
+                          />
+                        </Col>
 
-            {/* Details Section */}
-            <div className="mb-8">
-              <h2 className="text-2xl font-semibold text-gray-800 mb-6">Additional Details</h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {Object.entries(quotation.details).map(([key, value]) => (
-                  <div key={key}>
-                    <label className="block text-sm font-medium text-gray-700 mb-2 capitalize">
-                      {key} Details
-                    </label>
-                    <textarea
-                      value={value}
-                      onChange={(e) => setQuotation(prev => ({
-                        ...prev,
-                        details: { ...prev.details, [key]: e.target.value }
-                      }))}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-                      rows={3}
-                    />
-                  </div>
+                        {/* Transport */}
+                        <Col span={24}>
+                          <Divider />
+                          <Title level={5}>
+                            <CarOutlined style={{ marginRight: '8px', color: '#1890ff' }} />
+                            Transport & Hotel
+                          </Title>
+                        </Col>
+                        <Col xs={24} sm={8}>
+                          <label>Transport Cost (EUR)</label>
+                          <InputNumber
+                            min={0}
+                            value={quote.transportCost.count}
+                            onChange={(value) => updateQuote(index, 'transportCost.count', value)}
+                            style={{ width: '100%' }}
+                            formatter={(value) => `€ ${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
+                            parser={(value) => value!.replace(/€\s?|(,*)/g, '')}
+                          />
+                        </Col>
+                        <Col xs={24} sm={8}>
+                          <label>Hotel Stars</label>
+                          <Select
+                            value={quote.hotel.stars}
+                            onChange={(value) => updateQuote(index, 'hotel.stars', value)}
+                            style={{ width: '100%' }}
+                          >
+                            {[1, 2, 3, 4, 5].map(star => (
+                              <Select.Option key={star} value={star}>
+                                {star} Star{star > 1 ? 's' : ''}
+                              </Select.Option>
+                            ))}
+                          </Select>
+                        </Col>
+                        <Col xs={24} sm={8}>
+                          <label>Hotel Reference</label>
+                          <Input
+                            value={quote.hotel.reference}
+                            onChange={(e) => updateQuote(index, 'hotel.reference', e.target.value)}
+                            placeholder="Hotel name or reference"
+                          />
+                        </Col>
+                        <Col xs={24} sm={8}>
+                          <label>Hotel PP Price (EUR)</label>
+                          <InputNumber
+                            min={0}
+                            value={quote.hotel.ppPrice.count}
+                            onChange={(value) => updateQuote(index, 'hotel.ppPrice.count', value)}
+                            style={{ width: '100%' }}
+                            formatter={(value) => `€ ${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
+                            parser={(value) => value!.replace(/€\s?|(,*)/g, '')}
+                          />
+                        </Col>
+                        <Col xs={24} sm={8}>
+                          <label>Single Room Count</label>
+                          <InputNumber
+                            min={0}
+                            value={quote.hotel.singleRoom.count}
+                            onChange={(value) => updateQuote(index, 'hotel.singleRoom.count', value)}
+                            style={{ width: '100%' }}
+                          />
+                        </Col>
+                        <Col xs={24} sm={8}>
+                          <label>Single Room PP Price (EUR)</label>
+                          <InputNumber
+                            min={0}
+                            value={quote.hotel.singleRoom.ppPrice.count}
+                            onChange={(value) => updateQuote(index, 'hotel.singleRoom.ppPrice.count', value)}
+                            style={{ width: '100%' }}
+                            formatter={(value) => `€ ${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
+                            parser={(value) => value!.replace(/€\s?|(,*)/g, '')}
+                          />
+                        </Col>
+
+                        {/* Meals */}
+                        <Col span={24}>
+                          <Divider />
+                          <Title level={5}>Meals</Title>
+                        </Col>
+                        {['breakfast', 'lunch', 'dinner'].map((mealType) => (
+                          <Col xs={24} sm={8} key={mealType}>
+                            <Card size="small" title={mealType.charAt(0).toUpperCase() + mealType.slice(1)}>
+                              <Space direction="vertical" style={{ width: '100%' }}>
+                                <Switch
+                                  checked={quote.meals[mealType as keyof typeof quote.meals] !== null}
+                                  onChange={(checked) => {
+                                    if (checked) {
+                                      handleMealChange(index, mealType as any, true, 0);
+                                    } else {
+                                      handleMealChange(index, mealType as any, false);
+                                    }
+                                  }}
+                                  checkedChildren="Included"
+                                  unCheckedChildren="Not included"
+                                />
+                                {quote.meals[mealType as keyof typeof quote.meals] && (
+                                  <InputNumber
+                                    min={0}
+                                    value={quote.meals[mealType as keyof typeof quote.meals]?.ppPrice.count}
+                                    onChange={(value) => handleMealChange(index, mealType as any, true, value || 0)}
+                                    style={{ width: '100%' }}
+                                    placeholder="Price per person"
+                                    formatter={(value) => `€ ${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
+                                    parser={(value) => value!.replace(/€\s?|(,*)/g, '')}
+                                  />
+                                )}
+                              </Space>
+                            </Card>
+                          </Col>
+                        ))}
+
+                        {/* Attractions & Guides */}
+                        <Col span={24}>
+                          <Divider />
+                          <Title level={5}>Attractions & Guides</Title>
+                        </Col>
+                        <Col xs={24} sm={12}>
+                          <label>Attraction Name</label>
+                          <Input
+                            value={quote.attractions.name}
+                            onChange={(e) => updateQuote(index, 'attractions.name', e.target.value)}
+                            placeholder="Attraction or activity name"
+                          />
+                        </Col>
+                        <Col xs={24} sm={12}>
+                          <label>Attraction PP Price (EUR)</label>
+                          <InputNumber
+                            min={0}
+                            value={quote.attractions.ppPrice.count}
+                            onChange={(value) => updateQuote(index, 'attractions.ppPrice.count', value)}
+                            style={{ width: '100%' }}
+                            formatter={(value) => `€ ${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
+                            parser={(value) => value!.replace(/€\s?|(,*)/g, '')}
+                          />
+                        </Col>
+                        <Col xs={24} sm={12}>
+                          <label>Guide Price (EUR)</label>
+                          <InputNumber
+                            min={0}
+                            value={quote.guide.count}
+                            onChange={(value) => updateQuote(index, 'guide.count', value)}
+                            style={{ width: '100%' }}
+                            formatter={(value) => `€ ${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
+                            parser={(value) => value!.replace(/€\s?|(,*)/g, '')}
+                          />
+                        </Col>
+                        <Col xs={24} sm={12}>
+                          <label>Water PP Price (EUR)</label>
+                          <InputNumber
+                            min={0}
+                            value={quote.water.count}
+                            onChange={(value) => updateQuote(index, 'water.count', value)}
+                            style={{ width: '100%' }}
+                            formatter={(value) => `€ ${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
+                            parser={(value) => value!.replace(/€\s?|(,*)/g, '')}
+                          />
+                        </Col>
+
+                        {/* Local Guide */}
+                        <Col span={24}>
+                          <Divider />
+                          <Title level={5}>Local Guide</Title>
+                        </Col>
+                        <Col xs={24} sm={12}>
+                          <label>Tip Amount (EUR)</label>
+                          <InputNumber
+                            min={0}
+                            value={quote.localGuide.tip.count}
+                            onChange={(value) => updateQuote(index, 'localGuide.tip.count', value)}
+                            style={{ width: '100%' }}
+                            formatter={(value) => `€ ${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
+                            parser={(value) => value!.replace(/€\s?|(,*)/g, '')}
+                          />
+                        </Col>
+                        <Col xs={24} sm={12}>
+                          <label>Tip Type</label>
+                          <Select
+                            value={quote.localGuide.tip.type}
+                            onChange={(value) => updateQuote(index, 'localGuide.tip.type', value)}
+                            style={{ width: '100%' }}
+                          >
+                            <Select.Option value="Person">Per Person</Select.Option>
+                            <Select.Option value="Group">Per Group</Select.Option>
+                          </Select>
+                        </Col>
+                        <Col xs={24} sm={12}>
+                          <label>Salary (EUR)</label>
+                          <InputNumber
+                            min={0}
+                            value={quote.localGuide.salary.count}
+                            onChange={(value) => updateQuote(index, 'localGuide.salary.count', value)}
+                            style={{ width: '100%' }}
+                            formatter={(value) => `€ ${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
+                            parser={(value) => value!.replace(/€\s?|(,*)/g, '')}
+                          />
+                        </Col>
+                        <Col xs={24} sm={12}>
+                          <label>Accommodation (EUR)</label>
+                          <InputNumber
+                            min={0}
+                            value={quote.localGuide.accomadation.count}
+                            onChange={(value) => updateQuote(index, 'localGuide.accomadation.count', value)}
+                            style={{ width: '100%' }}
+                            formatter={(value) => `€ ${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
+                            parser={(value) => value!.replace(/€\s?|(,*)/g, '')}
+                          />
+                        </Col>
+                        <Col xs={24} sm={12}>
+                          <label>Meal (EUR)</label>
+                          <InputNumber
+                            min={0}
+                            value={quote.localGuide.meal.count}
+                            onChange={(value) => updateQuote(index, 'localGuide.meal.count', value)}
+                            style={{ width: '100%' }}
+                            formatter={(value) => `€ ${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
+                            parser={(value) => value!.replace(/€\s?|(,*)/g, '')}
+                          />
+                        </Col>
+
+                        {/* Extra Notes */}
+                        <Col span={24}>
+                          <label>Extra Notes</label>
+                          <TextArea
+                            value={quote.extra}
+                            onChange={(e) => updateQuote(index, 'extra', e.target.value)}
+                            rows={3}
+                            placeholder="Additional notes or special requirements"
+                          />
+                        </Col>
+                      </Row>
+                    </Panel>
+                  ))}
+                </Collapse>
+              )}
+            </Card>
+
+            {/* Additional Details */}
+            <Card
+              title="Additional Details"
+              style={{ marginBottom: '24px' }}
+              headStyle={{ borderBottom: '2px solid #f0f0f0' }}
+            >
+              <Row gutter={[16, 16]}>
+                {['transport', 'hotel', 'meal', 'attraction', 'guide', 'extra'].map((detail) => (
+                  <Col xs={24} sm={12} key={detail}>
+                    <Form.Item
+                      label={detail.charAt(0).toUpperCase() + detail.slice(1) + ' Details'}
+                      name={['details', detail]}
+                    >
+                      <TextArea
+                        rows={3}
+                        placeholder={`Enter ${detail} details and specifications`}
+                      />
+                    </Form.Item>
+                  </Col>
                 ))}
-              </div>
-            </div>
+              </Row>
+            </Card>
 
             {/* Submit Button */}
-            <div className="flex justify-center">
-              <button
-                type="submit"
-                className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-12 py-4 rounded-xl hover:from-blue-700 hover:to-indigo-700 transition-all duration-300 flex items-center text-lg font-semibold shadow-lg"
+            <div style={{ textAlign: 'center', marginTop: '32px' }}>
+              <Button
+                type="primary"
+                htmlType="submit"
+                size="large"
+                icon={<SaveOutlined />}
+                style={{
+                  height: '50px',
+                  fontSize: '16px',
+                  fontWeight: 'bold',
+                  borderRadius: '8px',
+                  background: 'linear-gradient(135deg, #1890ff 0%, #096dd9 100%)',
+                  border: 'none',
+                  boxShadow: '0 4px 12px rgba(24, 144, 255, 0.3)'
+                }}
               >
-                <Save size={24} className="mr-3" />
                 Generate Quotation
-              </button>
+              </Button>
             </div>
-          </form>
-        </div>
+          </Form>
+        </Card>
       </div>
     </div>
   );

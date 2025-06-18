@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { ConfigProvider } from 'antd';
 import QuotationForm from './components/QuotationForm';
 import QuotationResults from './components/QuotationResults';
 import { IQuotation, IQuotationResults } from './types';
@@ -104,15 +105,36 @@ function App() {
   };
 
   return (
-    <div className="App">
-      {currentView === 'form' ? (
-        <QuotationForm onSubmit={handleQuotationSubmit} />
-      ) : (
-        quotationResults && (
-          <QuotationResults results={quotationResults} onBack={handleBackToForm} />
-        )
-      )}
-    </div>
+    <ConfigProvider
+      theme={{
+        token: {
+          colorPrimary: '#1890ff',
+          borderRadius: 8,
+          colorBgContainer: '#ffffff',
+        },
+        components: {
+          Card: {
+            borderRadiusLG: 12,
+          },
+          Button: {
+            borderRadius: 8,
+          },
+          Input: {
+            borderRadius: 6,
+          },
+        },
+      }}
+    >
+      <div className="App">
+        {currentView === 'form' ? (
+          <QuotationForm onSubmit={handleQuotationSubmit} />
+        ) : (
+          quotationResults && (
+            <QuotationResults results={quotationResults} onBack={handleBackToForm} />
+          )
+        )}
+      </div>
+    </ConfigProvider>
   );
 }
 

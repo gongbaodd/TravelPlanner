@@ -1,6 +1,34 @@
 import React from 'react';
-import { ArrowLeft, FileText, Users, MapPin, Calendar, Euro, Hotel, Car, Utensils, Camera, User } from 'lucide-react';
+import {
+  Card,
+  Table,
+  Typography,
+  Row,
+  Col,
+  Statistic,
+  Button,
+  Descriptions,
+  Tag,
+  Space,
+  Divider
+} from 'antd';
+import {
+  ArrowLeftOutlined,
+  EuroOutlined,
+  UserOutlined,
+  CalendarOutlined,
+  FileTextOutlined,
+  BankOutlined as HotelOutlined,
+  CarOutlined,
+  CoffeeOutlined,
+  CameraOutlined,
+  TeamOutlined,
+  EnvironmentOutlined
+} from '@ant-design/icons';
+import dayjs from 'dayjs';
 import { IQuotationResults } from '../types';
+
+const { Title, Text } = Typography;
 
 interface QuotationResultsProps {
   results: IQuotationResults;
@@ -9,392 +37,466 @@ interface QuotationResultsProps {
 
 const QuotationResults: React.FC<QuotationResultsProps> = ({ results, onBack }) => {
   const formatCurrency = (amount: number) => `€${amount.toLocaleString()}`;
-  const formatDate = (date: Date) => date.toLocaleDateString('en-EU');
+  const formatDate = (date: Date) => dayjs(date).format('MMM DD, YYYY');
+
+  const hotelColumns = [
+    {
+      title: 'Check-in Date',
+      dataIndex: 'checkInDate',
+      key: 'checkInDate',
+      render: (date: Date) => formatDate(date),
+      sorter: (a: any, b: any) => dayjs(a.checkInDate).unix() - dayjs(b.checkInDate).unix(),
+    },
+    {
+      title: 'City',
+      dataIndex: 'cityName',
+      key: 'cityName',
+      filters: [...new Set(results.hotels.map(h => h.cityName))].map(city => ({
+        text: city,
+        value: city,
+      })),
+      onFilter: (value: any, record: any) => record.cityName === value,
+    },
+    {
+      title: 'Hotel',
+      dataIndex: 'referenceHotel',
+      key: 'referenceHotel',
+    },
+    {
+      title: 'Nights',
+      dataIndex: 'nights',
+      key: 'nights',
+      sorter: (a: any, b: any) => a.nights - b.nights,
+    },
+    {
+      title: 'Reviews',
+      dataIndex: 'reviews',
+      key: 'reviews',
+      render: (reviews: number) => (
+        <Tag color="blue">{reviews.toLocaleString()} reviews</Tag>
+      ),
+      sorter: (a: any, b: any) => a.reviews - b.reviews,
+    },
+  ];
+
+  const attractionColumns = [
+    {
+      title: 'Date',
+      dataIndex: 'date',
+      key: 'date',
+      render: (date: Date) => formatDate(date),
+      sorter: (a: any, b: any) => dayjs(a.date).unix() - dayjs(b.date).unix(),
+    },
+    {
+      title: 'City',
+      dataIndex: 'cityName',
+      key: 'cityName',
+      filters: [...new Set(results.attractions.map(a => a.cityName))].map(city => ({
+        text: city,
+        value: city,
+      })),
+      onFilter: (value: any, record: any) => record.cityName === value,
+    },
+    {
+      title: 'Attraction',
+      dataIndex: 'content',
+      key: 'content',
+    },
+  ];
+
+  const mealColumns = [
+    {
+      title: 'Date',
+      dataIndex: 'date',
+      key: 'date',
+      render: (date: Date) => formatDate(date),
+      sorter: (a: any, b: any) => dayjs(a.date).unix() - dayjs(b.date).unix(),
+    },
+    {
+      title: 'Type',
+      dataIndex: 'type',
+      key: 'type',
+      render: (type: string) => (
+        <Tag color={type === 'breakfast' ? 'orange' : type === 'lunch' ? 'green' : 'purple'}>
+          {type.charAt(0).toUpperCase() + type.slice(1)}
+        </Tag>
+      ),
+      filters: [
+        { text: 'Breakfast', value: 'breakfast' },
+        { text: 'Lunch', value: 'lunch' },
+        { text: 'Dinner', value: 'dinner' },
+      ],
+      onFilter: (value: any, record: any) => record.type === value,
+    },
+    {
+      title: 'Content',
+      dataIndex: 'content',
+      key: 'content',
+      render: (content: string | null) => content || <Text type="secondary">Not specified</Text>,
+    },
+  ];
+
+  const localGuideColumns = [
+    {
+      title: 'Date',
+      dataIndex: 'date',
+      key: 'date',
+      render: (date: Date) => formatDate(date),
+      sorter: (a: any, b: any) => dayjs(a.date).unix() - dayjs(b.date).unix(),
+    },
+    {
+      title: 'City',
+      dataIndex: 'cityName',
+      key: 'cityName',
+    },
+    {
+      title: 'Working Hours',
+      dataIndex: 'working_hours',
+      key: 'working_hours',
+      render: (hours: number | string) => `${hours} hours`,
+    },
+    {
+      title: 'Languages',
+      dataIndex: 'languages',
+      key: 'languages',
+      render: (languages: string[]) => (
+        <Space>
+          {languages.map(lang => (
+            <Tag key={lang} color="geekblue">{lang}</Tag>
+          ))}
+        </Space>
+      ),
+    },
+  ];
+
+  const serviceColumns = [
+    {
+      title: 'Date',
+      dataIndex: 'date',
+      key: 'date',
+      render: (date: Date) => formatDate(date),
+      sorter: (a: any, b: any) => dayjs(a.date).unix() - dayjs(b.date).unix(),
+    },
+    {
+      title: 'City',
+      dataIndex: 'cityName',
+      key: 'cityName',
+    },
+    {
+      title: 'Type',
+      dataIndex: 'type',
+      key: 'type',
+      render: (type: string) => <Tag color="cyan">{type}</Tag>,
+    },
+    {
+      title: 'Time',
+      dataIndex: 'time',
+      key: 'time',
+      render: (time: Date) => dayjs(time).format('HH:mm'),
+    },
+    {
+      title: 'Itinerary',
+      dataIndex: 'itinerary',
+      key: 'itinerary',
+    },
+    {
+      title: 'Duration',
+      dataIndex: 'duration',
+      key: 'duration',
+      render: (duration: string | null) => duration || <Text type="secondary">N/A</Text>,
+    },
+  ];
+
+  const tripDuration = Math.ceil(
+    (results.groupInfo.endDate.getTime() - results.groupInfo.startDate.getTime()) / (1000 * 60 * 60 * 24)
+  );
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-100 py-8">
-      <div className="max-w-7xl mx-auto px-4">
-        <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
-          <div className="bg-gradient-to-r from-green-600 to-emerald-600 px-8 py-6">
-            <div className="flex items-center justify-between">
+    <div style={{ minHeight: '100vh', background: 'linear-gradient(135deg, #52c41a 0%, #389e0d 100%)', padding: '24px' }}>
+      <div style={{ maxWidth: '1600px', margin: '0 auto' }}>
+        <Card
+          style={{
+            borderRadius: '16px',
+            boxShadow: '0 20px 40px rgba(0,0,0,0.1)',
+            overflow: 'hidden'
+          }}
+        >
+          <div
+            style={{
+              background: 'linear-gradient(135deg, #52c41a 0%, #389e0d 100%)',
+              margin: '-24px -24px 24px -24px',
+              padding: '32px 24px',
+              color: 'white'
+            }}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <div>
-                <h1 className="text-3xl font-bold text-white">Quotation Results</h1>
-                <p className="text-green-100 mt-2">Complete travel quotation breakdown</p>
+                <Title level={1} style={{ color: 'white', margin: 0, fontSize: '2.5rem' }}>
+                  <FileTextOutlined style={{ marginRight: '16px' }} />
+                  Quotation Results
+                </Title>
+                <Text style={{ color: 'rgba(255,255,255,0.8)', fontSize: '16px' }}>
+                  Complete travel quotation breakdown and analysis
+                </Text>
               </div>
-              <button
+              <Button
+                type="primary"
+                ghost
+                icon={<ArrowLeftOutlined />}
                 onClick={onBack}
-                className="bg-white/20 text-white px-6 py-3 rounded-lg hover:bg-white/30 transition-colors flex items-center"
+                size="large"
+                style={{ borderColor: 'white', color: 'white' }}
               >
-                <ArrowLeft size={20} className="mr-2" />
                 Back to Form
-              </button>
+              </Button>
             </div>
           </div>
 
-          <div className="p-8">
-            {/* Summary Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-              <div className="bg-gradient-to-br from-blue-500 to-blue-600 text-white p-6 rounded-xl">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-blue-100">Total Cost</p>
-                    <p className="text-2xl font-bold">{formatCurrency(results.calculations.totalSum)}</p>
-                  </div>
-                  <Euro size={32} className="text-blue-200" />
-                </div>
-              </div>
-              
-              <div className="bg-gradient-to-br from-green-500 to-green-600 text-white p-6 rounded-xl">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-green-100">Group Size</p>
-                    <p className="text-2xl font-bold">{results.groupInfo.name}</p>
-                  </div>
-                  <Users size={32} className="text-green-200" />
-                </div>
-              </div>
-              
-              <div className="bg-gradient-to-br from-purple-500 to-purple-600 text-white p-6 rounded-xl">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-purple-100">Duration</p>
-                    <p className="text-2xl font-bold">
-                      {Math.ceil((results.groupInfo.endDate.getTime() - results.groupInfo.startDate.getTime()) / (1000 * 60 * 60 * 24))} days
-                    </p>
-                  </div>
-                  <Calendar size={32} className="text-purple-200" />
-                </div>
-              </div>
-              
-              <div className="bg-gradient-to-br from-orange-500 to-orange-600 text-white p-6 rounded-xl">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-orange-100">Quote Date</p>
-                    <p className="text-2xl font-bold">{formatDate(results.groupQuote.quoteDate)}</p>
-                  </div>
-                  <FileText size={32} className="text-orange-200" />
-                </div>
-              </div>
-            </div>
+          {/* Summary Statistics */}
+          <Row gutter={[24, 24]} style={{ marginBottom: '32px' }}>
+            <Col xs={24} sm={12} md={6}>
+              <Card>
+                <Statistic
+                  title="Total Cost"
+                  value={results.calculations.totalSum}
+                  precision={2}
+                  valueStyle={{ color: '#1890ff', fontSize: '24px' }}
+                  prefix={<EuroOutlined />}
+                  suffix="EUR"
+                />
+              </Card>
+            </Col>
+            <Col xs={24} sm={12} md={6}>
+              <Card>
+                <Statistic
+                  title="Group"
+                  value={results.groupInfo.name}
+                  valueStyle={{ color: '#52c41a', fontSize: '18px' }}
+                  prefix={<UserOutlined />}
+                />
+              </Card>
+            </Col>
+            <Col xs={24} sm={12} md={6}>
+              <Card>
+                <Statistic
+                  title="Duration"
+                  value={tripDuration}
+                  valueStyle={{ color: '#722ed1', fontSize: '24px' }}
+                  prefix={<CalendarOutlined />}
+                  suffix="days"
+                />
+              </Card>
+            </Col>
+            <Col xs={24} sm={12} md={6}>
+              <Card>
+                <Statistic
+                  title="Quote Date"
+                  value={formatDate(results.groupQuote.quoteDate)}
+                  valueStyle={{ color: '#fa8c16', fontSize: '16px' }}
+                  prefix={<FileTextOutlined />}
+                />
+              </Card>
+            </Col>
+          </Row>
 
-            {/* Client Information */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
-              <div className="bg-gray-50 rounded-xl p-6">
-                <h2 className="text-xl font-semibold text-gray-800 mb-4 flex items-center">
-                  <Users className="mr-3 text-blue-600" size={24} />
-                  Client Information
-                </h2>
-                <div className="space-y-3">
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Company:</span>
-                    <span className="font-medium">{results.client.companyName}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Contact:</span>
-                    <span className="font-medium">{results.client.contactName}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Email:</span>
-                    <span className="font-medium">{results.client.email}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Phone:</span>
-                    <span className="font-medium">{results.client.tel}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Address:</span>
-                    <span className="font-medium">{results.client.address}</span>
-                  </div>
-                </div>
-              </div>
+          {/* Client and Company Information */}
+          <Row gutter={[24, 24]} style={{ marginBottom: '32px' }}>
+            <Col xs={24} lg={12}>
+              <Card
+                title={
+                  <Space>
+                    <UserOutlined style={{ color: '#1890ff' }} />
+                    <span>Client Information</span>
+                  </Space>
+                }
+                headStyle={{ borderBottom: '2px solid #f0f0f0' }}
+              >
+                <Descriptions column={1} size="small">
+                  <Descriptions.Item label="Company">{results.client.companyName}</Descriptions.Item>
+                  <Descriptions.Item label="Contact">{results.client.contactName}</Descriptions.Item>
+                  <Descriptions.Item label="Email">{results.client.email}</Descriptions.Item>
+                  <Descriptions.Item label="Phone">{results.client.tel}</Descriptions.Item>
+                  <Descriptions.Item label="Address">{results.client.address}</Descriptions.Item>
+                </Descriptions>
+              </Card>
+            </Col>
+            <Col xs={24} lg={12}>
+              <Card
+                title={
+                  <Space>
+                    <TeamOutlined style={{ color: '#52c41a' }} />
+                    <span>Great Line Information</span>
+                  </Space>
+                }
+                headStyle={{ borderBottom: '2px solid #f0f0f0' }}
+              >
+                <Descriptions column={1} size="small">
+                  <Descriptions.Item label="Contact">{results.greatLineInfo.contactName}</Descriptions.Item>
+                  <Descriptions.Item label="Department">{results.greatLineInfo.department}</Descriptions.Item>
+                  <Descriptions.Item label="Email">{results.greatLineInfo.email}</Descriptions.Item>
+                  <Descriptions.Item label="Phone">{results.greatLineInfo.tel}</Descriptions.Item>
+                </Descriptions>
+              </Card>
+            </Col>
+          </Row>
 
-              <div className="bg-gray-50 rounded-xl p-6">
-                <h2 className="text-xl font-semibold text-gray-800 mb-4 flex items-center">
-                  <FileText className="mr-3 text-green-600" size={24} />
-                  Great Line Information
-                </h2>
-                <div className="space-y-3">
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Contact:</span>
-                    <span className="font-medium">{results.greatLineInfo.contactName}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Department:</span>
-                    <span className="font-medium">{results.greatLineInfo.department}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Email:</span>
-                    <span className="font-medium">{results.greatLineInfo.email}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Phone:</span>
-                    <span className="font-medium">{results.greatLineInfo.tel}</span>
-                  </div>
-                </div>
-              </div>
+          {/* Cost Breakdown */}
+          <Card
+            title={
+              <Space>
+                <EuroOutlined style={{ color: '#1890ff' }} />
+                <span>Cost Breakdown</span>
+              </Space>
+            }
+            style={{ marginBottom: '32px' }}
+            headStyle={{ borderBottom: '2px solid #f0f0f0' }}
+          >
+            <Row gutter={[16, 16]}>
+              {[
+                { key: 'hotelSum', label: 'Hotels', icon: <HotelOutlined />, color: '#1890ff' },
+                { key: 'transportSum', label: 'Transport', icon: <CarOutlined />, color: '#52c41a' },
+                { key: 'mealSum', label: 'Meals', icon: <CoffeeOutlined />, color: '#fa8c16' },
+                { key: 'attractionSum', label: 'Attractions', icon: <CameraOutlined />, color: '#722ed1' },
+                { key: 'guideSum', label: 'Guides', icon: <TeamOutlined />, color: '#13c2c2' },
+                { key: 'localGuideSum', label: 'Local Guides', icon: <EnvironmentOutlined />, color: '#eb2f96' },
+              ].map(({ key, label, icon, color }) => (
+                <Col xs={24} sm={12} md={8} key={key}>
+                  <Card size="small" style={{ textAlign: 'center' }}>
+                    <Space direction="vertical">
+                      <div style={{ color, fontSize: '24px' }}>{icon}</div>
+                      <Text strong>{label}</Text>
+                      <Text style={{ fontSize: '18px', fontWeight: 'bold', color }}>
+                        {formatCurrency((results.calculations as any)[key])}
+                      </Text>
+                    </Space>
+                  </Card>
+                </Col>
+              ))}
+            </Row>
+            <Divider />
+            <div style={{ textAlign: 'center' }}>
+              <Title level={3} style={{ color: '#52c41a', margin: 0 }}>
+                Total: {formatCurrency(results.calculations.totalSum)}
+              </Title>
             </div>
+          </Card>
 
-            {/* Cost Breakdown */}
-            <div className="mb-8">
-              <h2 className="text-2xl font-semibold text-gray-800 mb-6 flex items-center">
-                <Euro className="mr-3 text-blue-600" size={28} />
-                Cost Breakdown
-              </h2>
-              <div className="bg-gray-50 rounded-xl p-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  <div className="bg-white p-4 rounded-lg shadow-sm">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center">
-                        <Hotel size={20} className="text-blue-600 mr-2" />
-                        <span className="text-gray-700">Hotels</span>
-                      </div>
-                      <span className="font-semibold">{formatCurrency(results.calculations.hotelSum)}</span>
-                    </div>
-                  </div>
-                  
-                  <div className="bg-white p-4 rounded-lg shadow-sm">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center">
-                        <Car size={20} className="text-green-600 mr-2" />
-                        <span className="text-gray-700">Transport</span>
-                      </div>
-                      <span className="font-semibold">{formatCurrency(results.calculations.transportSum)}</span>
-                    </div>
-                  </div>
-                  
-                  <div className="bg-white p-4 rounded-lg shadow-sm">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center">
-                        <Utensils size={20} className="text-orange-600 mr-2" />
-                        <span className="text-gray-700">Meals</span>
-                      </div>
-                      <span className="font-semibold">{formatCurrency(results.calculations.mealSum)}</span>
-                    </div>
-                  </div>
-                  
-                  <div className="bg-white p-4 rounded-lg shadow-sm">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center">
-                        <Camera size={20} className="text-purple-600 mr-2" />
-                        <span className="text-gray-700">Attractions</span>
-                      </div>
-                      <span className="font-semibold">{formatCurrency(results.calculations.attractionSum)}</span>
-                    </div>
-                  </div>
-                  
-                  <div className="bg-white p-4 rounded-lg shadow-sm">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center">
-                        <User size={20} className="text-indigo-600 mr-2" />
-                        <span className="text-gray-700">Guides</span>
-                      </div>
-                      <span className="font-semibold">{formatCurrency(results.calculations.guideSum)}</span>
-                    </div>
-                  </div>
-                  
-                  <div className="bg-white p-4 rounded-lg shadow-sm">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center">
-                        <MapPin size={20} className="text-red-600 mr-2" />
-                        <span className="text-gray-700">Local Guides</span>
-                      </div>
-                      <span className="font-semibold">{formatCurrency(results.calculations.localGuideSum)}</span>
-                    </div>
-                  </div>
-                </div>
-                
-                <div className="border-t mt-6 pt-6">
-                  <div className="flex justify-between items-center text-xl font-bold">
-                    <span>Total Cost:</span>
-                    <span className="text-green-600">{formatCurrency(results.calculations.totalSum)}</span>
-                  </div>
-                </div>
-              </div>
-            </div>
+          {/* Hotels Table */}
+          <Card
+            title={
+              <Space>
+                <HotelOutlined style={{ color: '#1890ff' }} />
+                <span>Hotels ({results.hotels.length})</span>
+              </Space>
+            }
+            style={{ marginBottom: '32px' }}
+            headStyle={{ borderBottom: '2px solid #f0f0f0' }}
+          >
+            <Table
+              columns={hotelColumns}
+              dataSource={results.hotels.map((hotel, index) => ({ ...hotel, key: index }))}
+              pagination={{ pageSize: 10, showSizeChanger: true, showQuickJumper: true }}
+              scroll={{ x: 800 }}
+            />
+          </Card>
 
-            {/* Hotels Table */}
-            <div className="mb-8">
-              <h2 className="text-2xl font-semibold text-gray-800 mb-6 flex items-center">
-                <Hotel className="mr-3 text-blue-600" size={28} />
-                Hotels
-              </h2>
-              <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
-                <div className="overflow-x-auto">
-                  <table className="w-full">
-                    <thead className="bg-gray-50">
-                      <tr>
-                        <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">Check-in Date</th>
-                        <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">City</th>
-                        <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">Hotel</th>
-                        <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">Nights</th>
-                        <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">Reviews</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-gray-200">
-                      {results.hotels.map((hotel, index) => (
-                        <tr key={index} className="hover:bg-gray-50">
-                          <td className="px-6 py-4 text-sm text-gray-900">{formatDate(hotel.checkInDate)}</td>
-                          <td className="px-6 py-4 text-sm text-gray-900">{hotel.cityName}</td>
-                          <td className="px-6 py-4 text-sm text-gray-900">{hotel.referenceHotel}</td>
-                          <td className="px-6 py-4 text-sm text-gray-900">{hotel.nights}</td>
-                          <td className="px-6 py-4 text-sm text-gray-900">{hotel.reviews}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            </div>
+          {/* Attractions Table */}
+          <Card
+            title={
+              <Space>
+                <CameraOutlined style={{ color: '#722ed1' }} />
+                <span>Attractions ({results.attractions.length})</span>
+              </Space>
+            }
+            style={{ marginBottom: '32px' }}
+            headStyle={{ borderBottom: '2px solid #f0f0f0' }}
+          >
+            <Table
+              columns={attractionColumns}
+              dataSource={results.attractions.map((attraction, index) => ({ ...attraction, key: index }))}
+              pagination={{ pageSize: 10, showSizeChanger: true, showQuickJumper: true }}
+              scroll={{ x: 600 }}
+            />
+          </Card>
 
-            {/* Attractions Table */}
-            <div className="mb-8">
-              <h2 className="text-2xl font-semibold text-gray-800 mb-6 flex items-center">
-                <Camera className="mr-3 text-purple-600" size={28} />
-                Attractions
-              </h2>
-              <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
-                <div className="overflow-x-auto">
-                  <table className="w-full">
-                    <thead className="bg-gray-50">
-                      <tr>
-                        <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">Date</th>
-                        <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">City</th>
-                        <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">Content</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-gray-200">
-                      {results.attractions.map((attraction, index) => (
-                        <tr key={index} className="hover:bg-gray-50">
-                          <td className="px-6 py-4 text-sm text-gray-900">{formatDate(attraction.date)}</td>
-                          <td className="px-6 py-4 text-sm text-gray-900">{attraction.cityName}</td>
-                          <td className="px-6 py-4 text-sm text-gray-900">{attraction.content}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            </div>
+          {/* Meals Table */}
+          <Card
+            title={
+              <Space>
+                <CoffeeOutlined style={{ color: '#fa8c16' }} />
+                <span>Meals ({results.meals.length})</span>
+              </Space>
+            }
+            style={{ marginBottom: '32px' }}
+            headStyle={{ borderBottom: '2px solid #f0f0f0' }}
+          >
+            <Table
+              columns={mealColumns}
+              dataSource={results.meals.map((meal, index) => ({ ...meal, key: index }))}
+              pagination={{ pageSize: 10, showSizeChanger: true, showQuickJumper: true }}
+              scroll={{ x: 600 }}
+            />
+          </Card>
 
-            {/* Meals Table */}
-            <div className="mb-8">
-              <h2 className="text-2xl font-semibold text-gray-800 mb-6 flex items-center">
-                <Utensils className="mr-3 text-orange-600" size={28} />
-                Meals
-              </h2>
-              <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
-                <div className="overflow-x-auto">
-                  <table className="w-full">
-                    <thead className="bg-gray-50">
-                      <tr>
-                        <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">Date</th>
-                        <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">Type</th>
-                        <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">Content</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-gray-200">
-                      {results.meals.map((meal, index) => (
-                        <tr key={index} className="hover:bg-gray-50">
-                          <td className="px-6 py-4 text-sm text-gray-900">{formatDate(meal.date)}</td>
-                          <td className="px-6 py-4 text-sm text-gray-900 capitalize">{meal.type}</td>
-                          <td className="px-6 py-4 text-sm text-gray-900">{meal.content || 'Not included'}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            </div>
+          {/* Local Guides Table */}
+          <Card
+            title={
+              <Space>
+                <TeamOutlined style={{ color: '#13c2c2' }} />
+                <span>Local Guides ({results.localGuides.length})</span>
+              </Space>
+            }
+            style={{ marginBottom: '32px' }}
+            headStyle={{ borderBottom: '2px solid #f0f0f0' }}
+          >
+            <Table
+              columns={localGuideColumns}
+              dataSource={results.localGuides.map((guide, index) => ({ ...guide, key: index }))}
+              pagination={{ pageSize: 10, showSizeChanger: true, showQuickJumper: true }}
+              scroll={{ x: 800 }}
+            />
+          </Card>
 
-            {/* Local Guides Table */}
-            <div className="mb-8">
-              <h2 className="text-2xl font-semibold text-gray-800 mb-6 flex items-center">
-                <User className="mr-3 text-indigo-600" size={28} />
-                Local Guides
-              </h2>
-              <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
-                <div className="overflow-x-auto">
-                  <table className="w-full">
-                    <thead className="bg-gray-50">
-                      <tr>
-                        <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">Date</th>
-                        <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">City</th>
-                        <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">Working Hours</th>
-                        <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">Languages</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-gray-200">
-                      {results.localGuides.map((guide, index) => (
-                        <tr key={index} className="hover:bg-gray-50">
-                          <td className="px-6 py-4 text-sm text-gray-900">{formatDate(guide.date)}</td>
-                          <td className="px-6 py-4 text-sm text-gray-900">{guide.cityName}</td>
-                          <td className="px-6 py-4 text-sm text-gray-900">{guide.working_hours}</td>
-                          <td className="px-6 py-4 text-sm text-gray-900">{guide.languages.join(', ')}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            </div>
+          {/* Services Table */}
+          <Card
+            title={
+              <Space>
+                <EnvironmentOutlined style={{ color: '#eb2f96' }} />
+                <span>Services ({results.services.length})</span>
+              </Space>
+            }
+            style={{ marginBottom: '32px' }}
+            headStyle={{ borderBottom: '2px solid #f0f0f0' }}
+          >
+            <Table
+              columns={serviceColumns}
+              dataSource={results.services.map((service, index) => ({ ...service, key: index }))}
+              pagination={{ pageSize: 10, showSizeChanger: true, showQuickJumper: true }}
+              scroll={{ x: 1000 }}
+            />
+          </Card>
 
-            {/* Services Table */}
-            <div className="mb-8">
-              <h2 className="text-2xl font-semibold text-gray-800 mb-6 flex items-center">
-                <MapPin className="mr-3 text-red-600" size={28} />
-                Services
-              </h2>
-              <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
-                <div className="overflow-x-auto">
-                  <table className="w-full">
-                    <thead className="bg-gray-50">
-                      <tr>
-                        <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">Date</th>
-                        <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">City</th>
-                        <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">Type</th>
-                        <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">Time</th>
-                        <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">Itinerary</th>
-                        <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">Duration</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-gray-200">
-                      {results.services.map((service, index) => (
-                        <tr key={index} className="hover:bg-gray-50">
-                          <td className="px-6 py-4 text-sm text-gray-900">{formatDate(service.date)}</td>
-                          <td className="px-6 py-4 text-sm text-gray-900">{service.cityName}</td>
-                          <td className="px-6 py-4 text-sm text-gray-900">{service.type}</td>
-                          <td className="px-6 py-4 text-sm text-gray-900">{service.time.toLocaleTimeString()}</td>
-                          <td className="px-6 py-4 text-sm text-gray-900">{service.itinerary}</td>
-                          <td className="px-6 py-4 text-sm text-gray-900">{service.duration || 'N/A'}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            </div>
-
-            {/* Offer Details */}
-            <div className="mb-8">
-              <h2 className="text-2xl font-semibold text-gray-800 mb-6 flex items-center">
-                <FileText className="mr-3 text-green-600" size={28} />
-                Offer Details
-              </h2>
-              <div className="bg-gray-50 rounded-xl p-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {Object.entries(results.offer).map(([key, value]) => (
-                    <div key={key} className="bg-white p-4 rounded-lg">
-                      <h3 className="font-semibold text-gray-800 mb-2 capitalize">
-                        {key.replace('_', ' ')}
-                      </h3>
-                      <p className="text-gray-600 text-sm">{value}</p>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
+          {/* Offer Details */}
+          <Card
+            title={
+              <Space>
+                <FileTextOutlined style={{ color: '#52c41a' }} />
+                <span>Offer Details</span>
+              </Space>
+            }
+            headStyle={{ borderBottom: '2px solid #f0f0f0' }}
+          >
+            <Row gutter={[16, 16]}>
+              {Object.entries(results.offer).map(([key, value]) => (
+                <Col xs={24} sm={12} key={key}>
+                  <Card size="small" title={key.replace('_', ' ').toUpperCase()}>
+                    <Text>{value}</Text>
+                  </Card>
+                </Col>
+              ))}
+            </Row>
+          </Card>
+        </Card>
       </div>
     </div>
   );
