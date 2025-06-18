@@ -1,15 +1,14 @@
 import React, { useState } from 'react';
 import { Card, Table, Button, Typography, Space, Row, Col, Statistic, Input, Avatar } from 'antd';
-import { PlusOutlined, EyeOutlined, ArrowLeftOutlined, UserOutlined, CalendarOutlined, TeamOutlined } from '@ant-design/icons';
+import { PlusOutlined, EyeOutlined, ArrowLeftOutlined, UserOutlined, CalendarOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
-import { IQuotationListItem, IClientInfo, IGroupInfo } from '../types';
+import { IQuotationListItem, IClientInfo } from '../types';
 
 const { Title, Text } = Typography;
 const { Search } = Input;
 
 interface QuotationListPageProps {
   client: IClientInfo;
-  groupInfo: IGroupInfo;
   onAddNew: () => void;
   onViewQuotation: (quotationId: string) => void;
   onBack: () => void;
@@ -17,7 +16,6 @@ interface QuotationListPageProps {
 
 const QuotationListPage: React.FC<QuotationListPageProps> = ({ 
   client, 
-  groupInfo, 
   onAddNew, 
   onViewQuotation, 
   onBack 
@@ -125,10 +123,6 @@ const QuotationListPage: React.FC<QuotationListPageProps> = ({
     },
   ];
 
-  const tripDuration = Math.ceil(
-    (groupInfo.endDate.getTime() - groupInfo.startDate.getTime()) / (1000 * 60 * 60 * 24)
-  );
-
   return (
     <div style={{ minHeight: '100vh', background: 'linear-gradient(135deg, #722ed1 0%, #531dab 100%)', padding: '24px' }}>
       <div style={{ maxWidth: '1400px', margin: '0 auto' }}>
@@ -150,7 +144,6 @@ const QuotationListPage: React.FC<QuotationListPageProps> = ({
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <div>
                 <Title level={1} style={{ color: 'white', margin: 0, fontSize: '2.5rem' }}>
-                  <TeamOutlined style={{ marginRight: '16px' }} />
                   Search Result
                 </Title>
                 <Text style={{ color: 'rgba(255,255,255,0.8)', fontSize: '16px' }}>
@@ -182,75 +175,39 @@ const QuotationListPage: React.FC<QuotationListPageProps> = ({
             </div>
           </div>
 
-          {/* Client and Group Info Summary */}
-          <Row gutter={[24, 24]} style={{ marginBottom: '32px' }}>
-            <Col xs={24} lg={12}>
-              <Card
-                title="Client Information"
-                headStyle={{ borderBottom: '2px solid #f0f0f0' }}
-              >
-                <Row gutter={[24, 16]}>
-                  <Col xs={24} sm={12}>
-                    <div>
-                      <Text type="secondary">Company</Text>
-                      <div style={{ fontSize: '16px', fontWeight: 'bold' }}>{client.companyName}</div>
-                    </div>
-                  </Col>
-                  <Col xs={24} sm={12}>
-                    <div>
-                      <Text type="secondary">Contact Person</Text>
-                      <div style={{ fontSize: '16px', fontWeight: 'bold' }}>{client.contactName}</div>
-                    </div>
-                  </Col>
-                  <Col xs={24} sm={12}>
-                    <div>
-                      <Text type="secondary">Email</Text>
-                      <div style={{ fontSize: '14px' }}>{client.email}</div>
-                    </div>
-                  </Col>
-                  <Col xs={24} sm={12}>
-                    <div>
-                      <Text type="secondary">Phone</Text>
-                      <div style={{ fontSize: '14px' }}>{client.tel}</div>
-                    </div>
-                  </Col>
-                </Row>
-              </Card>
-            </Col>
-            <Col xs={24} lg={12}>
-              <Card
-                title="Group Information"
-                headStyle={{ borderBottom: '2px solid #f0f0f0' }}
-              >
-                <Row gutter={[24, 16]}>
-                  <Col xs={24} sm={12}>
-                    <div>
-                      <Text type="secondary">Group Number</Text>
-                      <div style={{ fontSize: '16px', fontWeight: 'bold' }}>{groupInfo.number}</div>
-                    </div>
-                  </Col>
-                  <Col xs={24} sm={12}>
-                    <div>
-                      <Text type="secondary">Group Name</Text>
-                      <div style={{ fontSize: '16px', fontWeight: 'bold' }}>{groupInfo.name}</div>
-                    </div>
-                  </Col>
-                  <Col xs={24} sm={12}>
-                    <div>
-                      <Text type="secondary">Start Date</Text>
-                      <div style={{ fontSize: '14px' }}>{dayjs(groupInfo.startDate).format('MMM DD, YYYY')}</div>
-                    </div>
-                  </Col>
-                  <Col xs={24} sm={12}>
-                    <div>
-                      <Text type="secondary">Duration</Text>
-                      <div style={{ fontSize: '14px' }}>{tripDuration} days</div>
-                    </div>
-                  </Col>
-                </Row>
-              </Card>
-            </Col>
-          </Row>
+          {/* Client Info Summary */}
+          <Card
+            title="Client Information"
+            style={{ marginBottom: '32px' }}
+            headStyle={{ borderBottom: '2px solid #f0f0f0' }}
+          >
+            <Row gutter={[24, 16]}>
+              <Col xs={24} sm={12} md={6}>
+                <div>
+                  <Text type="secondary">Company</Text>
+                  <div style={{ fontSize: '16px', fontWeight: 'bold' }}>{client.companyName}</div>
+                </div>
+              </Col>
+              <Col xs={24} sm={12} md={6}>
+                <div>
+                  <Text type="secondary">Contact Person</Text>
+                  <div style={{ fontSize: '16px', fontWeight: 'bold' }}>{client.contactName}</div>
+                </div>
+              </Col>
+              <Col xs={24} sm={12} md={6}>
+                <div>
+                  <Text type="secondary">Email</Text>
+                  <div style={{ fontSize: '14px' }}>{client.email}</div>
+                </div>
+              </Col>
+              <Col xs={24} sm={12} md={6}>
+                <div>
+                  <Text type="secondary">Phone</Text>
+                  <div style={{ fontSize: '14px' }}>{client.tel}</div>
+                </div>
+              </Col>
+            </Row>
+          </Card>
 
           {/* Statistics */}
           <Row gutter={[24, 24]} style={{ marginBottom: '32px' }}>

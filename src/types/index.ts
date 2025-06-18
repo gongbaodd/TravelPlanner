@@ -5,6 +5,9 @@ export interface IQuotation {
   singleRoomFactor: number;
   groupName: string;
   groupNumber: string;
+  groupType: TGroupType;
+  startDate: Date;
+  endDate: Date;
   operator: string;
   date: Date;
   quotes: IQuote[];

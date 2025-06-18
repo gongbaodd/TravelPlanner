@@ -11,7 +11,8 @@ import {
   Space,
   Typography,
   message,
-  Tooltip
+  Tooltip,
+  Select
 } from 'antd';
 import {
   PlusOutlined,
@@ -21,12 +22,12 @@ import {
   SaveOutlined,
   InfoCircleOutlined,
   ArrowLeftOutlined,
-  CopyOutlined,
-  TableOutlined
+  TableOutlined,
+  TeamOutlined
 } from '@ant-design/icons';
-import { DataGrid,  Column } from 'react-data-grid';
+import {DataGrid,  Column } from 'react-data-grid';
 import dayjs from 'dayjs';
-import { IQuotation } from '../types';
+import { IQuotation, TGroupType } from '../types';
 import 'react-data-grid/lib/styles.css';
 
 const { Title, Text } = Typography;
@@ -65,11 +66,10 @@ interface DailyQuoteRow {
 
 const QuotationForm: React.FC<QuotationFormProps> = ({ onSubmit, onBack }) => {
   const [form] = Form.useForm();
-  const [rows, setRows] = useState<DailyQuoteRow[]>([]);
 
-  const createEmptyRow = (): DailyQuoteRow => ({
-    id: Date.now().toString() + Math.random(),
-    date: dayjs().format('YYYY-MM-DD'),
+  const createEmptyRow = (index: number = 0): DailyQuoteRow => ({
+    id: `row-${index}-${Date.now()}`,
+    date: dayjs().add(index, 'day').format('YYYY-MM-DD'),
     duration: 1,
     city: '',
     transport: 0,
@@ -93,17 +93,23 @@ const QuotationForm: React.FC<QuotationFormProps> = ({ onSubmit, onBack }) => {
     extra: ''
   });
 
+  // Initialize with 10 empty rows
+  const [rows, setRows] = useState<DailyQuoteRow[]>(() => 
+    Array.from({ length: 10 }, (_, index) => createEmptyRow(index))
+  );
+
   const addRow = () => {
-    const newRow = createEmptyRow();
+    const newRow = createEmptyRow(rows.length);
     setRows([...rows, newRow]);
     message.success('New daily quote added');
   };
 
-  const removeSelectedRows = () => {
-    // For simplicity, remove the last row
-    if (rows.length > 0) {
+  const removeLastRow = () => {
+    if (rows.length > 1) {
       setRows(rows.slice(0, -1));
       message.success('Daily quote removed');
+    } else {
+      message.warning('At least one row is required');
     }
   };
 
@@ -115,123 +121,6 @@ const QuotationForm: React.FC<QuotationFormProps> = ({ onSubmit, onBack }) => {
     }));
     setRows(updatedRows);
   }, []);
-
-  const handleCopy = useCallback((event: any) => {
-    const { sourceRow, sourceColumnKey } = event;
-    const value = sourceRow[sourceColumnKey as keyof DailyQuoteRow];
-    navigator.clipboard.writeText(String(value));
-  }, []);
-
-  const handlePaste = useCallback((event: any) => {
-    const { sourceColumnKey, sourceRow, targetColumnKey, targetRow } = event;
-    
-    // Handle paste from clipboard (Excel data)
-    navigator.clipboard.readText().then(text => {
-      if (text.includes('\t') || text.includes('\n')) {
-        // This looks like Excel data
-        const lines = text.trim().split('\n');
-        const newRows = [...rows];
-        
-        lines.forEach((line, lineIndex) => {
-          const values = line.split('\t');
-          const targetRowIndex = rows.findIndex(r => r.id === targetRow.id) + lineIndex;
-          
-          if (targetRowIndex < newRows.length && values.length > 0) {
-            const row = { ...newRows[targetRowIndex] };
-            
-            // Map Excel columns to our data structure
-            values.forEach((value, colIndex) => {
-              const trimmedValue = value.trim();
-              switch (colIndex) {
-                case 0: // date
-                  if (trimmedValue && dayjs(trimmedValue).isValid()) {
-                    row.date = dayjs(trimmedValue).format('YYYY-MM-DD');
-                  }
-                  break;
-                case 1: // duration
-                  row.duration = parseFloat(trimmedValue) || 1;
-                  break;
-                case 2: // city
-                  row.city = trimmedValue;
-                  break;
-                case 3: // transport
-                  row.transport = parseFloat(trimmedValue) || 0;
-                  break;
-                case 4: // hotel stars
-                  row.hotelStars = Math.min(5, Math.max(1, parseInt(trimmedValue) || 3));
-                  break;
-                case 5: // reference hotel
-                  row.referenceHotel = trimmedValue;
-                  break;
-                case 6: // hotel cost
-                  row.hotelCost = parseFloat(trimmedValue) || 0;
-                  break;
-                case 7: // single room count
-                  row.singleRoomCount = parseInt(trimmedValue) || 0;
-                  break;
-                case 8: // single room cost
-                  row.singleRoomCost = parseFloat(trimmedValue) || 0;
-                  break;
-                case 10: // breakfast
-                  row.breakfast = parseFloat(trimmedValue) || 0;
-                  break;
-                case 11: // lunch
-                  row.lunch = parseFloat(trimmedValue) || 0;
-                  break;
-                case 12: // dinner
-                  row.dinner = parseFloat(trimmedValue) || 0;
-                  break;
-                case 13: // attraction name
-                  row.attractionName = trimmedValue;
-                  break;
-                case 14: // attraction cost
-                  row.attractionCost = parseFloat(trimmedValue) || 0;
-                  break;
-                case 15: // guide cost
-                  row.guideCost = parseFloat(trimmedValue) || 0;
-                  break;
-                case 16: // water cost
-                  row.waterCost = parseFloat(trimmedValue) || 0;
-                  break;
-                case 17: // local guide tip
-                  row.localGuideTip = parseFloat(trimmedValue) || 0;
-                  break;
-                case 18: // local guide salary
-                  row.localGuideSalary = parseFloat(trimmedValue) || 0;
-                  break;
-                case 19: // local guide accommodation
-                  row.localGuideAccommodation = parseFloat(trimmedValue) || 0;
-                  break;
-                case 20: // local guide meal
-                  row.localGuideMeal = parseFloat(trimmedValue) || 0;
-                  break;
-                case 21: // extra
-                  row.extra = trimmedValue;
-                  break;
-              }
-            });
-            
-            // Calculate single room cost sum
-            row.singleRoomCostSum = row.singleRoomCount * row.singleRoomCost;
-            newRows[targetRowIndex] = row;
-          }
-        });
-        
-        setRows(newRows);
-        message.success(`Pasted ${lines.length} row(s) from Excel`);
-      }
-    }).catch(() => {
-      // Fallback to simple paste
-      const updatedRows = rows.map(row => 
-        row.id === targetRow.id 
-          ? { ...row, [targetColumnKey]: sourceRow[sourceColumnKey as keyof DailyQuoteRow] }
-          : row
-      );
-      setRows(updatedRows);
-    });
-
-    return { ...targetRow, [targetColumnKey]: sourceRow[sourceColumnKey as keyof DailyQuoteRow] };
-  }, [rows]);
 
   const columns: Column<DailyQuoteRow>[] = [
     {
@@ -432,7 +321,15 @@ const QuotationForm: React.FC<QuotationFormProps> = ({ onSubmit, onBack }) => {
   ];
 
   const convertRowsToQuotes = (rows: DailyQuoteRow[]) => {
-    return rows.map(row => ({
+    // Filter out completely empty rows
+    const validRows = rows.filter(row => 
+      row.city.trim() !== '' || 
+      row.transport > 0 || 
+      row.hotelCost > 0 || 
+      row.attractionName.trim() !== ''
+    );
+
+    return validRows.map(row => ({
       date: dayjs(row.date).toDate(),
       dayCount: row.duration,
       cityName: row.city || 'FLY',
@@ -468,15 +365,17 @@ const QuotationForm: React.FC<QuotationFormProps> = ({ onSubmit, onBack }) => {
   };
 
   const onFinish = (values: any) => {
-    if (rows.length === 0) {
-      message.error('Please add at least one daily quote');
+    const validQuotes = convertRowsToQuotes(rows);
+    
+    if (validQuotes.length === 0) {
+      message.error('Please fill in at least one daily quote with valid data');
       return;
     }
 
     const quotationData: IQuotation = {
       ...values,
       date: values.date.toDate(),
-      quotes: convertRowsToQuotes(rows),
+      quotes: validQuotes,
       details: values.details || {
         transport: '',
         hotel: '',
@@ -524,7 +423,7 @@ const QuotationForm: React.FC<QuotationFormProps> = ({ onSubmit, onBack }) => {
                   Travel Quotation System
                 </Title>
                 <Text style={{ color: 'rgba(255,255,255,0.8)', fontSize: '16px' }}>
-                  Create detailed travel quotations with Excel-like data grid
+                  Create detailed travel quotations with data grid
                 </Text>
               </div>
               <Button
@@ -548,9 +447,94 @@ const QuotationForm: React.FC<QuotationFormProps> = ({ onSubmit, onBack }) => {
               date: dayjs(),
               singleRoomFactor: 1,
               allNum: 0,
-              leadNum: 0
+              leadNum: 0,
+              groupType: 'single',
+              startDate: dayjs(),
+              endDate: dayjs().add(7, 'day')
             }}
           >
+            {/* Group Information */}
+            <Card
+              title={
+                <Space>
+                  <TeamOutlined style={{ color: '#1890ff' }} />
+                  <span>Group Information</span>
+                </Space>
+              }
+              style={{ marginBottom: '24px' }}
+              headStyle={{ borderBottom: '2px solid #f0f0f0' }}
+            >
+              <Row gutter={[24, 16]}>
+                <Col xs={24} sm={12} md={8}>
+                  <Form.Item
+                    label="Group Number"
+                    name="groupNumber"
+                    rules={[{ required: true, message: 'Please enter group number!' }]}
+                  >
+                    <Input
+                      prefix={<TeamOutlined />}
+                      placeholder="Enter group number (e.g., GRP001)"
+                      style={{ borderRadius: '8px' }}
+                    />
+                  </Form.Item>
+                </Col>
+
+                <Col xs={24} sm={12} md={8}>
+                  <Form.Item
+                    label="Group Name"
+                    name="groupName"
+                    rules={[{ required: true, message: 'Please enter group name!' }]}
+                  >
+                    <Input
+                      prefix={<TeamOutlined />}
+                      placeholder="Enter group name"
+                      style={{ borderRadius: '8px' }}
+                    />
+                  </Form.Item>
+                </Col>
+
+                <Col xs={24} sm={12} md={8}>
+                  <Form.Item
+                    label="Group Type"
+                    name="groupType"
+                    rules={[{ required: true, message: 'Please select group type!' }]}
+                  >
+                    <Select style={{ borderRadius: '8px' }}>
+                      <Select.Option value="single">Single Tour</Select.Option>
+                      <Select.Option value="series">Series Tours</Select.Option>
+                      <Select.Option value="business">Business Travel</Select.Option>
+                    </Select>
+                  </Form.Item>
+                </Col>
+
+                <Col xs={24} sm={12} md={8}>
+                  <Form.Item
+                    label="Start Date"
+                    name="startDate"
+                    rules={[{ required: true, message: 'Please select start date!' }]}
+                  >
+                    <DatePicker 
+                      style={{ width: '100%', borderRadius: '8px' }}
+                      placeholder="Select start date"
+                    />
+                  </Form.Item>
+                </Col>
+
+                <Col xs={24} sm={12} md={8}>
+                  <Form.Item
+                    label="End Date"
+                    name="endDate"
+                    rules={[{ required: true, message: 'Please select end date!' }]}
+                  >
+                    <DatePicker 
+                      style={{ width: '100%', borderRadius: '8px' }}
+                      placeholder="Select end date"
+                    />
+                  </Form.Item>
+                </Col>
+              </Row>
+            </Card>
+
             {/* Basic Information */}
             <Card
               title={
@@ -623,24 +607,6 @@ const QuotationForm: React.FC<QuotationFormProps> = ({ onSubmit, onBack }) => {
                 </Col>
                 <Col xs={24} sm={12} md={8}>
                   <Form.Item
-                    label="Group Name"
-                    name="groupName"
-                    rules={[{ required: true, message: 'Please enter group name' }]}
-                  >
-                    <Input size="large" placeholder="Enter group name" />
-                  </Form.Item>
-                </Col>
-                <Col xs={24} sm={12} md={8}>
-                  <Form.Item
-                    label="Group Number"
-                    name="groupNumber"
-                    rules={[{ required: true, message: 'Please enter group number' }]}
-                  >
-                    <Input size="large" placeholder="Enter group number" />
-                  </Form.Item>
-                </Col>
-                <Col xs={24} sm={12} md={8}>
-                  <Form.Item
                     label="Operator"
                     name="operator"
                     rules={[{ required: true, message: 'Please enter operator name' }]}
@@ -665,8 +631,8 @@ const QuotationForm: React.FC<QuotationFormProps> = ({ onSubmit, onBack }) => {
               title={
                 <Space>
                   <TableOutlined style={{ color: '#52c41a' }} />
-                  <span>Daily Quotes ({totalRows} days)</span>
-                  {totalRows > 0 && (
+                  <span>Daily Quotes ({totalRows} rows)</span>
+                  {totalCost > 0 && (
                     <Text style={{ color: '#1890ff', fontWeight: 'bold' }}>
                       Total: €{totalCost.toLocaleString()}
                     </Text>
@@ -675,14 +641,6 @@ const QuotationForm: React.FC<QuotationFormProps> = ({ onSubmit, onBack }) => {
               }
               extra={
                 <Space>
-                  <Tooltip title="Copy data from Excel and paste directly into the grid">
-                    <Button
-                      icon={<CopyOutlined />}
-                      size="small"
-                    >
-                      Excel Paste Support
-                    </Button>
-                  </Tooltip>
                   <Button
                     type="primary"
                     icon={<PlusOutlined />}
@@ -694,9 +652,9 @@ const QuotationForm: React.FC<QuotationFormProps> = ({ onSubmit, onBack }) => {
                   <Button
                     danger
                     icon={<DeleteOutlined />}
-                    onClick={removeSelectedRows}
+                    onClick={removeLastRow}
                     size="large"
-                    disabled={rows.length === 0}
+                    disabled={rows.length <= 1}
                   >
                     Remove Last
                   </Button>
@@ -705,33 +663,21 @@ const QuotationForm: React.FC<QuotationFormProps> = ({ onSubmit, onBack }) => {
               style={{ marginBottom: '24px' }}
               headStyle={{ borderBottom: '2px solid #f0f0f0' }}
             >
-              {rows.length === 0 ? (
-                <div style={{ textAlign: 'center', padding: '60px', color: '#999' }}>
-                  <TableOutlined style={{ fontSize: '48px', marginBottom: '16px' }} />
-                  <div style={{ fontSize: '16px', marginBottom: '8px' }}>No daily quotes added yet</div>
-                  <div style={{ fontSize: '14px' }}>
-                    Click "Add Row" to get started, or copy data from Excel and paste it here
-                  </div>
-                </div>
-              ) : (
-                <div style={{ height: '400px', width: '100%' }}>
-                  <DataGrid
-                    columns={columns}
-                    rows={rows}
-                    onRowsChange={handleRowsChange}
-                    onCopy={handleCopy}
-                    onPaste={handlePaste}
-                    className="rdg-light"
-                    style={{ 
-                      height: '100%',
-                      border: '1px solid #d9d9d9',
-                      borderRadius: '6px'
-                    }}
-                    rowKeyGetter={(row) => row.id}
-                    enableVirtualization
-                  />
-                </div>
-              )}
+              <div style={{ height: '400px', width: '100%' }}>
+                <DataGrid
+                  columns={columns}
+                  rows={rows}
+                  onRowsChange={handleRowsChange}
+                  className="rdg-light"
+                  style={{ 
+                    height: '100%',
+                    border: '1px solid #d9d9d9',
+                    borderRadius: '6px'
+                  }}
+                  rowKeyGetter={(row) => row.id}
+                  enableVirtualization
+                />
+              </div>
               
               <div style={{ 
                 marginTop: '16px', 
@@ -741,15 +687,15 @@ const QuotationForm: React.FC<QuotationFormProps> = ({ onSubmit, onBack }) => {
                 fontSize: '12px',
                 color: '#666'
               }}>
-                <strong>💡 Excel Paste Instructions:</strong>
+                <strong>💡 Instructions:</strong>
                 <br />
-                1. Copy data from Excel (Ctrl+C)
+                • Click on any cell to edit the value
                 <br />
-                2. Click on any cell in the grid
+                • Single Room Cost Sum is calculated automatically (Count × Cost)
                 <br />
-                3. Paste (Ctrl+V) - data will be automatically mapped to columns
+                • Fill in at least one row with valid data to generate quotation
                 <br />
-                4. Single Room Cost Sum is calculated automatically
+                • Use "Add Row" to add more days, "Remove Last" to remove the last row
               </div>
             </Card>
 
@@ -783,7 +729,6 @@ const QuotationForm: React.FC<QuotationFormProps> = ({ onSubmit, onBack }) => {
                 htmlType="submit"
                 size="large"
                 icon={<SaveOutlined />}
-                disabled={rows.length === 0}
                 style={{
                   height: '50px',
                   fontSize: '16px',

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Card, Table, Button, Typography, Space, Row, Col, Statistic, Input, Tag, Avatar } from 'antd';
+import { Card, Table, Button, Typography, Space, Row, Col, Statistic, Input, Avatar } from 'antd';
 import { 
   PlusOutlined, 
   EyeOutlined, 
@@ -7,11 +7,10 @@ import {
   UserOutlined, 
   TeamOutlined,
   CalendarOutlined,
-  EuroOutlined,
   BankOutlined
 } from '@ant-design/icons';
 import dayjs from 'dayjs';
-import { IGreatLineInfo, IClientInfo, IGroupInfo, IQuotationListItem } from '../types';
+import { IGreatLineInfo, IClientInfo, IQuotationListItem } from '../types';
 
 const { Title, Text } = Typography;
 const { Search } = Input;
@@ -19,7 +18,7 @@ const { Search } = Input;
 interface MyClientsPageProps {
   greatLineInfo: IGreatLineInfo;
   onCreateClient: () => void;
-  onViewClient: (client: IClientInfo, groupInfo: IGroupInfo) => void;
+  onViewClient: (client: IClientInfo) => void;
 }
 
 // Mock data for clients and their quotations
@@ -32,13 +31,6 @@ const mockClientsData = [
       email: 'john@adventuretours.com',
       tel: '+1-555-0101',
       address: '123 Travel Street, New York, NY 10001'
-    },
-    groupInfo: {
-      number: 'GRP001',
-      name: 'European Heritage Tour',
-      startDate: new Date('2024-03-15'),
-      endDate: new Date('2024-03-25'),
-      type: 'single' as const
     },
     quotations: [
       {
@@ -70,13 +62,6 @@ const mockClientsData = [
       tel: '+1-555-0202',
       address: '456 Corporate Ave, Los Angeles, CA 90210'
     },
-    groupInfo: {
-      number: 'GRP002',
-      name: 'Executive Retreat',
-      startDate: new Date('2024-04-01'),
-      endDate: new Date('2024-04-05'),
-      type: 'business' as const
-    },
     quotations: [
       {
         id: '3',
@@ -97,13 +82,6 @@ const mockClientsData = [
       email: 'robert@familyvacation.com',
       tel: '+1-555-0303',
       address: '789 Holiday Blvd, Miami, FL 33101'
-    },
-    groupInfo: {
-      number: 'GRP003',
-      name: 'Family Adventure Package',
-      startDate: new Date('2024-05-10'),
-      endDate: new Date('2024-05-20'),
-      type: 'single' as const
     },
     quotations: [
       {
@@ -129,8 +107,7 @@ const MyClientsPage: React.FC<MyClientsPageProps> = ({
   const allQuotations = mockClientsData.flatMap(clientData => 
     clientData.quotations.map(quotation => ({
       ...quotation,
-      client: clientData.client,
-      groupInfo: clientData.groupInfo
+      client: clientData.client
     }))
   );
 
@@ -142,18 +119,7 @@ const MyClientsPage: React.FC<MyClientsPageProps> = ({
 
   const totalClients = mockClientsData.length;
   const totalQuotations = allQuotations.length;
-  const totalValue = allQuotations.reduce((sum, q) => sum + q.totalCost, 0);
   const approvedCount = allQuotations.filter(q => q.status === 'approved').length;
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'approved': return 'green';
-      case 'sent': return 'blue';
-      case 'draft': return 'orange';
-      case 'rejected': return 'red';
-      default: return 'default';
-    }
-  };
 
   const columns = [
     {
@@ -206,7 +172,7 @@ const MyClientsPage: React.FC<MyClientsPageProps> = ({
           type="primary"
           ghost
           icon={<EyeOutlined />}
-          onClick={() => onViewClient(record.client, record.groupInfo)}
+          onClick={() => onViewClient(record.client)}
         >
           View Details
         </Button>
@@ -296,7 +262,7 @@ const MyClientsPage: React.FC<MyClientsPageProps> = ({
 
           {/* Statistics */}
           <Row gutter={[24, 24]} style={{ marginBottom: '32px' }}>
-            <Col xs={24} sm={6}>
+            <Col xs={24} sm={8}>
               <Card>
                 <Statistic
                   title="Total Clients"
@@ -306,7 +272,7 @@ const MyClientsPage: React.FC<MyClientsPageProps> = ({
                 />
               </Card>
             </Col>
-            <Col xs={24} sm={6}>
+            <Col xs={24} sm={8}>
               <Card>
                 <Statistic
                   title="Total Quotations"
@@ -316,17 +282,7 @@ const MyClientsPage: React.FC<MyClientsPageProps> = ({
                 />
               </Card>
             </Col>
-            <Col xs={24} sm={6}>
-              <Card>
-                <Statistic
-                  title="Approved"
-                  value={approvedCount}
-                  valueStyle={{ color: '#52c41a', fontSize: '32px' }}
-                  suffix={`/ ${totalQuotations}`}
-                />
-              </Card>
-            </Col>
-            <Col xs={24} sm={6}>
+            <Col xs={24} sm={8}>
               <Card>
                 <Statistic
                   title="Success Rate"

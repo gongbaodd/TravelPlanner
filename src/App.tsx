@@ -18,7 +18,6 @@ function App() {
   const [currentUser, setCurrentUser] = useState<IUser | null>(null);
   const [greatLineInfo, setGreatLineInfo] = useState<IGreatLineInfo | null>(null);
   const [currentClient, setCurrentClient] = useState<IClientInfo | null>(null);
-  const [currentGroupInfo, setCurrentGroupInfo] = useState<IGroupInfo | null>(null);
   const [quotationResults, setQuotationResults] = useState<IQuotationResults | null>(null);
   const [selectedQuotationId, setSelectedQuotationId] = useState<string | null>(null);
 
@@ -84,9 +83,8 @@ function App() {
     setCurrentView('createClient');
   };
 
-  const handleClientSubmit = (client: IClientInfo, groupInfo: IGroupInfo) => {
+  const handleClientSubmit = (client: IClientInfo) => {
     setCurrentClient(client);
-    setCurrentGroupInfo(groupInfo);
     setCurrentView('quotationList');
   };
 
@@ -108,13 +106,21 @@ function App() {
   };
 
   const generateMockResults = () => {
-    if (!currentClient || !greatLineInfo || !currentGroupInfo) return;
+    if (!currentClient || !greatLineInfo) return;
+
+    const mockGroupInfo: IGroupInfo = {
+      number: 'GRP001',
+      name: 'European Heritage Tour',
+      startDate: new Date('2024-03-15'),
+      endDate: new Date('2024-03-25'),
+      type: 'single'
+    };
 
     const mockResults: IQuotationResults = {
       id: '1',
       client: currentClient,
       greatLineInfo: greatLineInfo,
-      groupInfo: currentGroupInfo,
+      groupInfo: mockGroupInfo,
       groupQuote: {
         quotes: [
           {
@@ -249,18 +255,23 @@ function App() {
   };
 
   const handleQuotationSubmit = (quotation: IQuotation) => {
-    if (!currentClient || !greatLineInfo || !currentGroupInfo) return;
+    if (!currentClient || !greatLineInfo) return;
 
     const calculations = calculateQuotationTotals(quotation);
+    
+    // Create group info from quotation data
+    const groupInfo: IGroupInfo = {
+      number: quotation.groupNumber || 'GRP001',
+      name: quotation.groupName || 'Travel Group',
+      startDate: quotation.startDate || quotation.date,
+      endDate: quotation.endDate || quotation.date,
+      type: quotation.groupType || 'single'
+    };
     
     const results: IQuotationResults = {
       client: currentClient,
       greatLineInfo: greatLineInfo,
-      groupInfo: {
-        ...currentGroupInfo,
-        startDate: quotation.quotes.length > 0 ? quotation.quotes[0].date : quotation.date,
-        endDate: quotation.quotes.length > 0 ? quotation.quotes[quotation.quotes.length - 1].date : quotation.date,
-      },
+      groupInfo: groupInfo,
       groupQuote: {
         quotes: [
           {
@@ -332,7 +343,6 @@ function App() {
     setQuotationResults(null);
     setSelectedQuotationId(null);
     setCurrentClient(null);
-    setCurrentGroupInfo(null);
   };
 
   const handleBackToList = () => {
@@ -392,9 +402,8 @@ function App() {
           <MyClientsPage
             greatLineInfo={greatLineInfo}
             onCreateClient={handleGoToCreateClient}
-            onViewClient={(client, groupInfo) => {
+            onViewClient={(client) => {
               setCurrentClient(client);
-              setCurrentGroupInfo(groupInfo);
               setCurrentView('quotationList');
             }}
           />
@@ -404,10 +413,9 @@ function App() {
           <CreateClientPage onSubmit={handleClientSubmit} />
         )}
         
-        {currentView === 'quotationList' && currentClient && currentGroupInfo && (
+        {currentView === 'quotationList' && currentClient && (
           <QuotationListPage
             client={currentClient}
-            groupInfo={currentGroupInfo}
             onAddNew={handleAddNewQuotation}
             onViewQuotation={handleViewQuotation}
             onBack={handleBackToMyClients}

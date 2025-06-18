@@ -1,14 +1,13 @@
 import React, { useState } from 'react';
-import { Card, Form, Input, Button, Typography, message, Space, Row, Col, DatePicker, Select } from 'antd';
-import { UserOutlined, PhoneOutlined, MailOutlined, HomeOutlined, SearchOutlined, PlusOutlined, TeamOutlined, CalendarOutlined } from '@ant-design/icons';
-import { IClientInfo, IGroupInfo, TGroupType } from '../types';
-import dayjs from 'dayjs';
+import { Card, Form, Input, Button, Typography, message, Space, Row, Col } from 'antd';
+import { UserOutlined, PhoneOutlined, MailOutlined, HomeOutlined, SearchOutlined } from '@ant-design/icons';
+import { IClientInfo } from '../types';
 
 const { Title, Text } = Typography;
 const { TextArea } = Input;
 
 interface CreateClientPageProps {
-  onSubmit: (client: IClientInfo, groupInfo: IGroupInfo) => void;
+  onSubmit: (client: IClientInfo) => void;
 }
 
 const CreateClientPage: React.FC<CreateClientPageProps> = ({ onSubmit }) => {
@@ -29,17 +28,9 @@ const CreateClientPage: React.FC<CreateClientPageProps> = ({ onSubmit }) => {
         tel: values.tel,
         address: values.address
       };
-
-      const groupData: IGroupInfo = {
-        number: values.groupNumber,
-        name: values.groupName,
-        startDate: values.startDate.toDate(),
-        endDate: values.endDate.toDate(),
-        type: values.groupType
-      };
       
-      onSubmit(clientData, groupData);
-      message.success('Client and group information saved successfully!');
+      onSubmit(clientData);
+      message.success('Client information saved successfully!');
     } catch (error) {
       message.error('Failed to save information');
     } finally {
@@ -82,10 +73,10 @@ const CreateClientPage: React.FC<CreateClientPageProps> = ({ onSubmit }) => {
               <UserOutlined />
             </div>
             <Title level={1} style={{ color: 'white', margin: 0, fontSize: '2.5rem' }}>
-              Create Client & Group
+              Create Client
             </Title>
             <Text style={{ color: 'rgba(255,255,255,0.8)', fontSize: '16px' }}>
-              Enter client information and create group details
+              Enter client information to get started
             </Text>
           </div>
 
@@ -94,11 +85,6 @@ const CreateClientPage: React.FC<CreateClientPageProps> = ({ onSubmit }) => {
             layout="vertical"
             onFinish={handleSubmit}
             size="large"
-            initialValues={{
-              groupType: 'single',
-              startDate: dayjs(),
-              endDate: dayjs().add(7, 'day')
-            }}
           >
             {/* Client Information Section */}
             <Card
@@ -181,88 +167,6 @@ const CreateClientPage: React.FC<CreateClientPageProps> = ({ onSubmit }) => {
                       rows={3}
                       placeholder="Enter complete address"
                       style={{ borderRadius: '8px' }}
-                    />
-                  </Form.Item>
-                </Col>
-              </Row>
-            </Card>
-
-            {/* Group Information Section */}
-            <Card
-              title={
-                <Space>
-                  <TeamOutlined style={{ color: '#1890ff' }} />
-                  <span>Group Information</span>
-                </Space>
-              }
-              style={{ marginBottom: '24px' }}
-              headStyle={{ borderBottom: '2px solid #f0f0f0' }}
-            >
-              <Row gutter={[24, 16]}>
-                <Col xs={24} sm={12}>
-                  <Form.Item
-                    label="Group Number"
-                    name="groupNumber"
-                    rules={[{ required: true, message: 'Please enter group number!' }]}
-                  >
-                    <Input
-                      prefix={<TeamOutlined />}
-                      placeholder="Enter group number (e.g., GRP001)"
-                      style={{ borderRadius: '8px' }}
-                    />
-                  </Form.Item>
-                </Col>
-
-                <Col xs={24} sm={12}>
-                  <Form.Item
-                    label="Group Name"
-                    name="groupName"
-                    rules={[{ required: true, message: 'Please enter group name!' }]}
-                  >
-                    <Input
-                      prefix={<TeamOutlined />}
-                      placeholder="Enter group name"
-                      style={{ borderRadius: '8px' }}
-                    />
-                  </Form.Item>
-                </Col>
-
-                <Col xs={24} sm={8}>
-                  <Form.Item
-                    label="Group Type"
-                    name="groupType"
-                    rules={[{ required: true, message: 'Please select group type!' }]}
-                  >
-                    <Select style={{ borderRadius: '8px' }}>
-                      <Select.Option value="single">Single Tour</Select.Option>
-                      <Select.Option value="series">Series Tours</Select.Option>
-                      <Select.Option value="business">Business Travel</Select.Option>
-                    </Select>
-                  </Form.Item>
-                </Col>
-
-                <Col xs={24} sm={8}>
-                  <Form.Item
-                    label="Start Date"
-                    name="startDate"
-                    rules={[{ required: true, message: 'Please select start date!' }]}
-                  >
-                    <DatePicker 
-                      style={{ width: '100%', borderRadius: '8px' }}
-                      placeholder="Select start date"
-                    />
-                  </Form.Item>
-                </Col>
-
-                <Col xs={24} sm={8}>
-                  <Form.Item
-                    label="End Date"
-                    name="endDate"
-                    rules={[{ required: true, message: 'Please select end date!' }]}
-                  >
-                    <DatePicker 
-                      style={{ width: '100%', borderRadius: '8px' }}
-                      placeholder="Select end date"
                     />
                   </Form.Item>
                 </Col>
