@@ -75,6 +75,7 @@ export interface IAttraction {
 
 // Results interfaces
 export interface IClientInfo {
+  id?: string;
   companyName: string;
   address: string;
   tel: string;
@@ -160,6 +161,7 @@ export interface IService {
 }
 
 export interface IQuotationResults {
+  id?: string;
   client: IClientInfo;
   greatLineInfo: IGreatLineInfo;
   groupInfo: IGroupInfo;
@@ -182,4 +184,19 @@ export interface IQuotationResults {
     waterSum: number;
     totalSum: number;
   };
+}
+
+export interface IUser {
+  id: string;
+  email: string;
+  name: string;
+}
+
+export interface IQuotationListItem {
+  id: string;
+  clientName: string;
+  groupName: string;
+  totalCost: number;
+  createdDate: Date;
+  status: 'draft' | 'sent' | 'approved' | 'rejected';
 }
