@@ -20,6 +20,7 @@ function App() {
   const [currentClient, setCurrentClient] = useState<IClientInfo | null>(null);
   const [quotationResults, setQuotationResults] = useState<IQuotationResults | null>(null);
   const [selectedQuotationId, setSelectedQuotationId] = useState<string | null>(null);
+  const [selectedGroupName, setSelectedGroupName] = useState<string | null>(null);
 
   const handleLogin = (email: string, password: string) => {
     // Mock user creation
@@ -94,23 +95,23 @@ function App() {
 
   const handleViewQuotation = (quotationId: string) => {
     setSelectedQuotationId(quotationId);
-    // In a real app, you would fetch the quotation data here
-    // For now, we'll just show the form or generate mock results
-    if (quotationId === '1') {
-      // Show existing quotation results
-      generateMockResults();
-    } else {
-      // Show form for editing
-      setCurrentView('quotationForm');
-    }
+    // Get the group name based on quotation ID
+    const groupNames: { [key: string]: string } = {
+      '1': 'European Heritage Tour',
+      '2': 'Business Conference Trip',
+      '3': 'Cultural Heritage Tour',
+      '4': 'Adventure Sports Package'
+    };
+    setSelectedGroupName(groupNames[quotationId] || 'Travel Group');
+    generateMockResults(groupNames[quotationId] || 'Travel Group');
   };
 
-  const generateMockResults = () => {
+  const generateMockResults = (groupName?: string) => {
     if (!currentClient || !greatLineInfo) return;
 
     const mockGroupInfo: IGroupInfo = {
       number: 'GRP001',
-      name: 'European Heritage Tour',
+      name: groupName || 'European Heritage Tour',
       startDate: new Date('2024-03-15'),
       endDate: new Date('2024-03-25'),
       type: 'single'
@@ -126,7 +127,7 @@ function App() {
           {
             ppPrice: 1575.00,
             currency: 'EUR',
-            content: 'Complete 10-day European tour package for 10 people'
+            content: `Complete 10-day ${groupName || 'European Heritage Tour'} package for 10 people`
           }
         ],
         quoteDate: new Date(),
@@ -342,6 +343,7 @@ function App() {
     setCurrentView('myClients');
     setQuotationResults(null);
     setSelectedQuotationId(null);
+    setSelectedGroupName(null);
     setCurrentClient(null);
   };
 
@@ -349,6 +351,7 @@ function App() {
     setCurrentView('quotationList');
     setQuotationResults(null);
     setSelectedQuotationId(null);
+    setSelectedGroupName(null);
   };
 
   const handleBackToForm = () => {

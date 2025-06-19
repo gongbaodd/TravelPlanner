@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { Card, Table, Button, Typography, Space, Row, Col, Statistic, Input, Avatar } from 'antd';
-import { PlusOutlined, EyeOutlined, ArrowLeftOutlined, UserOutlined, CalendarOutlined } from '@ant-design/icons';
+import { Card, Table, Button, Typography, Space, Row, Col, Statistic, Input, Tag } from 'antd';
+import { PlusOutlined, EyeOutlined, ArrowLeftOutlined, UserOutlined, CalendarOutlined, CheckCircleOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import { IQuotationListItem, IClientInfo } from '../types';
 
@@ -23,7 +23,7 @@ const QuotationListPage: React.FC<QuotationListPageProps> = ({
   const [searchText, setSearchText] = useState('');
 
   // Mock data - in real app, this would come from API
-  const mockQuotations: (IQuotationListItem & { greatLineContact: string })[] = [
+  const mockQuotations: (IQuotationListItem & { state: 'published' | 'draft' })[] = [
     {
       id: '1',
       clientName: client.companyName,
@@ -31,7 +31,7 @@ const QuotationListPage: React.FC<QuotationListPageProps> = ({
       totalCost: 15750.00,
       createdDate: new Date('2024-01-15'),
       status: 'approved',
-      greatLineContact: 'Sarah Johnson'
+      state: 'published'
     },
     {
       id: '2',
@@ -40,7 +40,7 @@ const QuotationListPage: React.FC<QuotationListPageProps> = ({
       totalCost: 8920.50,
       createdDate: new Date('2024-01-10'),
       status: 'sent',
-      greatLineContact: 'Mike Chen'
+      state: 'published'
     },
     {
       id: '3',
@@ -49,7 +49,7 @@ const QuotationListPage: React.FC<QuotationListPageProps> = ({
       totalCost: 12300.75,
       createdDate: new Date('2024-01-05'),
       status: 'draft',
-      greatLineContact: 'David Wilson'
+      state: 'draft'
     },
     {
       id: '4',
@@ -58,17 +58,16 @@ const QuotationListPage: React.FC<QuotationListPageProps> = ({
       totalCost: 22100.00,
       createdDate: new Date('2023-12-28'),
       status: 'rejected',
-      greatLineContact: 'Lisa Anderson'
+      state: 'published'
     }
   ];
 
   const filteredQuotations = mockQuotations.filter(quotation => {
-    const matchesSearch = quotation.groupName.toLowerCase().includes(searchText.toLowerCase()) ||
-                         quotation.greatLineContact.toLowerCase().includes(searchText.toLowerCase());
+    const matchesSearch = quotation.groupName.toLowerCase().includes(searchText.toLowerCase());
     return matchesSearch;
   });
 
-  const approvedCount = mockQuotations.filter(q => q.status === 'approved').length;
+  const publishedCount = mockQuotations.filter(q => q.state === 'published').length;
 
   const columns = [
     {
@@ -89,15 +88,22 @@ const QuotationListPage: React.FC<QuotationListPageProps> = ({
       sorter: (a: any, b: any) => a.totalCost - b.totalCost,
     },
     {
-      title: 'Great Line Contact',
-      dataIndex: 'greatLineContact',
-      key: 'greatLineContact',
-      render: (contact: string) => (
-        <Space>
-          <Avatar size="small" icon={<UserOutlined />} />
-          <Text>{contact}</Text>
-        </Space>
+      title: 'State',
+      dataIndex: 'state',
+      key: 'state',
+      render: (state: 'published' | 'draft') => (
+        <Tag 
+          color={state === 'published' ? 'green' : 'orange'}
+          icon={state === 'published' ? <CheckCircleOutlined /> : undefined}
+        >
+          {state.charAt(0).toUpperCase() + state.slice(1)}
+        </Tag>
       ),
+      filters: [
+        { text: 'Published', value: 'published' },
+        { text: 'Draft', value: 'draft' },
+      ],
+      onFilter: (value: any, record: any) => record.state === value,
     },
     {
       title: 'Created Date',
@@ -117,7 +123,7 @@ const QuotationListPage: React.FC<QuotationListPageProps> = ({
           icon={<EyeOutlined />}
           onClick={() => onViewQuotation(record.id)}
         >
-          View
+          View Results
         </Button>
       ),
     },
@@ -224,9 +230,10 @@ const QuotationListPage: React.FC<QuotationListPageProps> = ({
             <Col xs={24} sm={8}>
               <Card>
                 <Statistic
-                  title="Approved"
-                  value={approvedCount}
+                  title="Published Count"
+                  value={publishedCount}
                   valueStyle={{ color: '#52c41a', fontSize: '32px' }}
+                  prefix={<CheckCircleOutlined />}
                   suffix={`/ ${mockQuotations.length}`}
                 />
               </Card>
@@ -234,10 +241,10 @@ const QuotationListPage: React.FC<QuotationListPageProps> = ({
             <Col xs={24} sm={8}>
               <Card>
                 <Statistic
-                  title="Success Rate"
-                  value={mockQuotations.length > 0 ? Math.round((approvedCount / mockQuotations.length) * 100) : 0}
+                  title="Draft Count"
+                  value={mockQuotations.length - publishedCount}
                   valueStyle={{ color: '#fa8c16', fontSize: '32px' }}
-                  suffix="%"
+                  prefix={<UserOutlined />}
                 />
               </Card>
             </Col>
@@ -248,7 +255,7 @@ const QuotationListPage: React.FC<QuotationListPageProps> = ({
             title="Quotations"
             extra={
               <Search
-                placeholder="Search quotations or contacts..."
+                placeholder="Search quotations..."
                 allowClear
                 style={{ width: 300 }}
                 onChange={(e) => setSearchText(e.target.value)}

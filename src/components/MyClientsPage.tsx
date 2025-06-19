@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Card, Table, Button, Typography, Space, Row, Col, Statistic, Input, Avatar } from 'antd';
+import { Card, Table, Button, Typography, Space, Row, Col, Statistic, Input, Avatar, Tag } from 'antd';
 import { 
   PlusOutlined, 
   EyeOutlined, 
@@ -7,7 +7,8 @@ import {
   UserOutlined, 
   TeamOutlined,
   CalendarOutlined,
-  BankOutlined
+  BankOutlined,
+  CheckCircleOutlined
 } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import { IGreatLineInfo, IClientInfo, IQuotationListItem } from '../types';
@@ -21,7 +22,7 @@ interface MyClientsPageProps {
   onViewClient: (client: IClientInfo) => void;
 }
 
-// Mock data for clients and their quotations
+// Mock data for clients and their quotations with state
 const mockClientsData = [
   {
     client: {
@@ -40,7 +41,7 @@ const mockClientsData = [
         totalCost: 15750.00,
         createdDate: new Date('2024-01-15'),
         status: 'approved' as const,
-        greatLineContact: 'Sarah Johnson'
+        state: 'published' as const
       },
       {
         id: '2',
@@ -49,7 +50,7 @@ const mockClientsData = [
         totalCost: 8920.50,
         createdDate: new Date('2024-01-10'),
         status: 'sent' as const,
-        greatLineContact: 'Mike Chen'
+        state: 'published' as const
       }
     ]
   },
@@ -70,7 +71,7 @@ const mockClientsData = [
         totalCost: 12300.75,
         createdDate: new Date('2024-01-05'),
         status: 'draft' as const,
-        greatLineContact: 'David Wilson'
+        state: 'draft' as const
       }
     ]
   },
@@ -91,7 +92,16 @@ const mockClientsData = [
         totalCost: 22100.00,
         createdDate: new Date('2023-12-28'),
         status: 'rejected' as const,
-        greatLineContact: 'Lisa Anderson'
+        state: 'published' as const
+      },
+      {
+        id: '5',
+        clientName: 'Family Vacation Co',
+        groupName: 'Summer Beach Holiday',
+        totalCost: 18500.00,
+        createdDate: new Date('2024-01-20'),
+        status: 'approved' as const,
+        state: 'draft' as const
       }
     ]
   }
@@ -111,58 +121,56 @@ const MyClientsPage: React.FC<MyClientsPageProps> = ({
     }))
   );
 
-  const filteredQuotations = allQuotations.filter(quotation =>
-    quotation.groupName.toLowerCase().includes(searchText.toLowerCase()) ||
-    quotation.clientName.toLowerCase().includes(searchText.toLowerCase()) ||
-    quotation.greatLineContact.toLowerCase().includes(searchText.toLowerCase())
+  // Filter clients based on search text
+  const filteredClients = mockClientsData.filter(clientData =>
+    clientData.client.companyName.toLowerCase().includes(searchText.toLowerCase()) ||
+    clientData.client.contactName.toLowerCase().includes(searchText.toLowerCase()) ||
+    clientData.client.email.toLowerCase().includes(searchText.toLowerCase())
   );
 
   const totalClients = mockClientsData.length;
   const totalQuotations = allQuotations.length;
-  const approvedCount = allQuotations.filter(q => q.status === 'approved').length;
+  const publishedCount = allQuotations.filter(q => q.state === 'published').length;
 
+  const handleViewClient = (client: IClientInfo) => {
+    onViewClient(client);
+  };
+
+  // Columns for clients table (simplified)
   const columns = [
     {
-      title: 'Client Company',
-      dataIndex: 'clientName',
-      key: 'clientName',
+      title: 'Company Name',
+      dataIndex: ['client', 'companyName'],
+      key: 'companyName',
       render: (text: string) => <Text strong>{text}</Text>,
     },
     {
-      title: 'Group Name',
-      dataIndex: 'groupName',
-      key: 'groupName',
+      title: 'Contact Person',
+      dataIndex: ['client', 'contactName'],
+      key: 'contactName',
       render: (text: string) => <Text>{text}</Text>,
     },
     {
-      title: 'Total Cost',
-      dataIndex: 'totalCost',
-      key: 'totalCost',
-      render: (cost: number) => (
+      title: 'Email',
+      dataIndex: ['client', 'email'],
+      key: 'email',
+      render: (email: string) => <Text>{email}</Text>,
+    },
+    {
+      title: 'Phone',
+      dataIndex: ['client', 'tel'],
+      key: 'tel',
+      render: (tel: string) => <Text>{tel}</Text>,
+    },
+    {
+      title: 'Total Quotations',
+      key: 'quotationCount',
+      render: (_, record: any) => (
         <Text style={{ fontSize: '16px', fontWeight: 'bold', color: '#1890ff' }}>
-          €{cost.toLocaleString()}
+          {record.quotations.length}
         </Text>
       ),
-      sorter: (a: any, b: any) => a.totalCost - b.totalCost,
-    },
-    {
-      title: 'Great Line Contact',
-      dataIndex: 'greatLineContact',
-      key: 'greatLineContact',
-      render: (contact: string) => (
-        <Space>
-          <Avatar size="small" icon={<UserOutlined />} />
-          <Text>{contact}</Text>
-        </Space>
-      ),
-    },
-    {
-      title: 'Created Date',
-      dataIndex: 'createdDate',
-      key: 'createdDate',
-      render: (date: Date) => dayjs(date).format('MMM DD, YYYY'),
-      sorter: (a: any, b: any) => 
-        dayjs(a.createdDate).unix() - dayjs(b.createdDate).unix(),
+      sorter: (a: any, b: any) => a.quotations.length - b.quotations.length,
     },
     {
       title: 'Actions',
@@ -172,9 +180,9 @@ const MyClientsPage: React.FC<MyClientsPageProps> = ({
           type="primary"
           ghost
           icon={<EyeOutlined />}
-          onClick={() => onViewClient(record.client)}
+          onClick={() => handleViewClient(record.client)}
         >
-          View Details
+          View Results
         </Button>
       ),
     },
@@ -285,23 +293,24 @@ const MyClientsPage: React.FC<MyClientsPageProps> = ({
             <Col xs={24} sm={8}>
               <Card>
                 <Statistic
-                  title="Success Rate"
-                  value={totalQuotations > 0 ? Math.round((approvedCount / totalQuotations) * 100) : 0}
-                  valueStyle={{ color: '#fa8c16', fontSize: '32px' }}
-                  suffix="%"
+                  title="Published Count"
+                  value={publishedCount}
+                  valueStyle={{ color: '#52c41a', fontSize: '32px' }}
+                  prefix={<CheckCircleOutlined />}
+                  suffix={`/ ${totalQuotations}`}
                 />
               </Card>
             </Col>
           </Row>
 
-          {/* Quotations List */}
+          {/* Clients List */}
           <Card
-            title="All Quotations"
+            title="All Clients"
             extra={
               <Search
-                placeholder="Search quotations, clients, or contacts..."
+                placeholder="Search clients by company, contact, or email..."
                 allowClear
-                style={{ width: 300 }}
+                style={{ width: 350 }}
                 onChange={(e) => setSearchText(e.target.value)}
               />
             }
@@ -310,12 +319,12 @@ const MyClientsPage: React.FC<MyClientsPageProps> = ({
           >
             <Table
               columns={columns}
-              dataSource={filteredQuotations.map(q => ({ ...q, key: q.id }))}
+              dataSource={filteredClients.map(clientData => ({ ...clientData, key: clientData.client.id }))}
               pagination={{
                 pageSize: 10,
                 showSizeChanger: true,
                 showQuickJumper: true,
-                showTotal: (total, range) => `${range[0]}-${range[1]} of ${total} quotations`
+                showTotal: (total, range) => `${range[0]}-${range[1]} of ${total} clients`
               }}
               scroll={{ x: 1000 }}
             />
