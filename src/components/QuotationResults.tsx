@@ -10,7 +10,8 @@ import {
   Descriptions,
   Tag,
   Space,
-  Divider
+  Divider,
+  List
 } from 'antd';
 import {
   ArrowLeftOutlined,
@@ -24,7 +25,10 @@ import {
   CameraOutlined,
   TeamOutlined,
   EnvironmentOutlined,
-  HomeOutlined
+  HomeOutlined,
+  ClockCircleOutlined,
+  FlagOutlined,
+  ExclamationCircleOutlined
 } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import { IQuotationResults } from '../types';
@@ -40,6 +44,111 @@ interface QuotationResultsProps {
 const QuotationResults: React.FC<QuotationResultsProps> = ({ results, onBack, onBackToMyClients }) => {
   const formatCurrency = (amount: number) => `€${amount.toLocaleString()}`;
   const formatDate = (date: Date) => dayjs(date).format('MMM DD, YYYY');
+  const formatTime = (date: Date) => dayjs(date).format('HH:mm');
+
+  // Generate enhanced services with meals and times
+  const generateEnhancedServices = () => {
+    const services = [];
+    
+    // Sort dates to process chronologically
+    const sortedDates = [...new Set(results.services.map(s => s.date.getTime()))]
+      .sort((a, b) => a - b)
+      .map(time => new Date(time));
+
+    sortedDates.forEach((date, dayIndex) => {
+      const dayServices = results.services.filter(s => 
+        dayjs(s.date).format('YYYY-MM-DD') === dayjs(date).format('YYYY-MM-DD')
+      );
+      
+      const dayMeals = results.meals.filter(m => 
+        dayjs(m.date).format('YYYY-MM-DD') === dayjs(date).format('YYYY-MM-DD')
+      );
+
+      // Morning service (if exists)
+      if (dayServices.length > 0) {
+        const morningService = dayServices[0];
+        services.push({
+          key: `service-${dayIndex}-morning`,
+          date: date,
+          time: new Date(date.getTime() + 8 * 60 * 60 * 1000), // 8:00 AM
+          type: 'Transportation',
+          description: morningService.itinerary || `Transportation in ${morningService.cityName}`,
+          city: morningService.cityName,
+          category: 'transport'
+        });
+      }
+
+      // Add meals throughout the day
+      dayMeals.forEach((meal, mealIndex) => {
+        let mealTime;
+        let mealIcon;
+        
+        switch (meal.type) {
+          case 'breakfast':
+            mealTime = new Date(date.getTime() + 7 * 60 * 60 * 1000); // 7:00 AM
+            mealIcon = '🥐';
+            break;
+          case 'lunch':
+            mealTime = new Date(date.getTime() + 12 * 60 * 60 * 1000); // 12:00 PM
+            mealIcon = '🍽️';
+            break;
+          case 'dinner':
+            mealTime = new Date(date.getTime() + 19 * 60 * 60 * 1000); // 7:00 PM
+            mealIcon = '🍷';
+            break;
+          default:
+            mealTime = new Date(date.getTime() + (12 + mealIndex * 2) * 60 * 60 * 1000);
+            mealIcon = '🍽️';
+        }
+
+        services.push({
+          key: `meal-${dayIndex}-${meal.type}`,
+          date: date,
+          time: mealTime,
+          type: `${meal.type.charAt(0).toUpperCase() + meal.type.slice(1)}`,
+          description: meal.content || `${meal.type.charAt(0).toUpperCase() + meal.type.slice(1)} service`,
+          city: dayServices[0]?.cityName || 'Various',
+          category: 'meal',
+          icon: mealIcon
+        });
+      });
+
+      // Add attractions for the day
+      const dayAttractions = results.attractions.filter(a => 
+        dayjs(a.date).format('YYYY-MM-DD') === dayjs(date).format('YYYY-MM-DD')
+      );
+
+      dayAttractions.forEach((attraction, attractionIndex) => {
+        services.push({
+          key: `attraction-${dayIndex}-${attractionIndex}`,
+          date: date,
+          time: new Date(date.getTime() + (10 + attractionIndex * 3) * 60 * 60 * 1000), // Starting from 10:00 AM
+          type: 'Attraction Visit',
+          description: attraction.content,
+          city: attraction.cityName,
+          category: 'attraction'
+        });
+      });
+
+      // Evening service (if multiple services exist)
+      if (dayServices.length > 1) {
+        const eveningService = dayServices[dayServices.length - 1];
+        services.push({
+          key: `service-${dayIndex}-evening`,
+          date: date,
+          time: new Date(date.getTime() + 18 * 60 * 60 * 1000), // 6:00 PM
+          type: 'Return Transportation',
+          description: `Return to hotel in ${eveningService.cityName}`,
+          city: eveningService.cityName,
+          category: 'transport'
+        });
+      }
+    });
+
+    return services.sort((a, b) => a.time.getTime() - b.time.getTime());
+  };
+
+  const enhancedServices = generateEnhancedServices();
 
   const hotelColumns = [
     {
@@ -171,7 +280,7 @@ const QuotationResults: React.FC<QuotationResultsProps> = ({ results, onBack, on
     },
   ];
 
-  const serviceColumns = [
+  const enhancedServiceColumns = [
     {
       title: 'Date',
       dataIndex: 'date',
@@ -180,38 +289,84 @@ const QuotationResults: React.FC<QuotationResultsProps> = ({ results, onBack, on
       sorter: (a: any, b: any) => dayjs(a.date).unix() - dayjs(b.date).unix(),
     },
     {
+      title: 'Time',
+      dataIndex: 'time',
+      key: 'time',
+      render: (time: Date) => (
+        <Space>
+          <ClockCircleOutlined style={{ color: '#1890ff' }} />
+          <Text strong>{formatTime(time)}</Text>
+        </Space>
+      ),
+      sorter: (a: any, b: any) => a.time.getTime() - b.time.getTime(),
+    },
+    {
       title: 'City',
-      dataIndex: 'cityName',
-      key: 'cityName',
+      dataIndex: 'city',
+      key: 'city',
+      filters: [...new Set(enhancedServices.map(s => s.city))].map(city => ({
+        text: city,
+        value: city,
+      })),
+      onFilter: (value: any, record: any) => record.city === value,
     },
     {
       title: 'Type',
       dataIndex: 'type',
       key: 'type',
-      render: (type: string) => <Tag color="cyan">{type}</Tag>,
+      render: (type: string, record: any) => {
+        let color = 'blue';
+        let icon = <CarOutlined />;
+        
+        if (record.category === 'meal') {
+          color = 'orange';
+          icon = <CoffeeOutlined />;
+        } else if (record.category === 'attraction') {
+          color = 'purple';
+          icon = <CameraOutlined />;
+        } else if (record.category === 'transport') {
+          color = 'green';
+          icon = <CarOutlined />;
+        }
+
+        return (
+          <Tag color={color} icon={icon}>
+            {record.icon && <span style={{ marginRight: '4px' }}>{record.icon}</span>}
+            {type}
+          </Tag>
+        );
+      },
+      filters: [
+        { text: 'Transportation', value: 'transport' },
+        { text: 'Meals', value: 'meal' },
+        { text: 'Attractions', value: 'attraction' },
+      ],
+      onFilter: (value: any, record: any) => record.category === value,
     },
     {
-      title: 'Time',
-      dataIndex: 'time',
-      key: 'time',
-      render: (time: Date) => dayjs(time).format('HH:mm'),
-    },
-    {
-      title: 'Itinerary',
-      dataIndex: 'itinerary',
-      key: 'itinerary',
-    },
-    {
-      title: 'Duration',
-      dataIndex: 'duration',
-      key: 'duration',
-      render: (duration: string | null) => duration || <Text type="secondary">N/A</Text>,
+      title: 'Description',
+      dataIndex: 'description',
+      key: 'description',
+      render: (description: string) => <Text>{description}</Text>,
     },
   ];
 
   const tripDuration = Math.ceil(
     (results.groupInfo.endDate.getTime() - results.groupInfo.startDate.getTime()) / (1000 * 60 * 60 * 24)
   );
+
+  // Offer exclusions data
+  const offerExclusions = [
+    'International and domestic airfares, airport taxes.',
+    'Visa fees, personal expenses (laundry, telephone etc.)',
+    'Anything else not specified in the itinerary.',
+    'Driver and tour guide working hours：10H per day，Overtime：Driver 50Eur per hour，Tour guide 50Eur per hour.',
+    'Any meals change and cancellation requested to inform us 72 hours, otherwise no change and FOC',
+    'All timings are subject to local traffic conditions.',
+    'Currency fluctuations of more than 3% or changes in local government taxes may result in price changes.',
+    'Prices are not applicable on fair dates. We reserve the right to apply supplements or confirm hotels outside the affected city or in alternative cities should the tour include cities affected by a trade fair.',
+    'Unless otherwise specified, parking, permits and tolls are included. These are quoted at rates applicable at the time of our offer. These rates may be increased by local councils at any time without notice. As this is out of GREAT LINE Travel\'s control, we reserve the right to add a surcharge for any additional costs if necessary.'
+  ];
 
   return (
     <div style={{ minHeight: '100vh', background: 'linear-gradient(135deg, #52c41a 0%, #389e0d 100%)', padding: '24px' }}>
@@ -313,6 +468,59 @@ const QuotationResults: React.FC<QuotationResultsProps> = ({ results, onBack, on
             </Col>
           </Row>
 
+          {/* Group Information */}
+          <Card
+            title={
+              <Space>
+                <FlagOutlined style={{ color: '#722ed1' }} />
+                <span>Group Information</span>
+              </Space>
+            }
+            style={{ marginBottom: '32px' }}
+            headStyle={{ borderBottom: '2px solid #f0f0f0' }}
+          >
+            <Row gutter={[24, 16]}>
+              <Col xs={24} sm={12} md={6}>
+                <div>
+                  <Text type="secondary">Group Number</Text>
+                  <div style={{ fontSize: '16px', fontWeight: 'bold' }}>{results.groupInfo.number}</div>
+                </div>
+              </Col>
+              <Col xs={24} sm={12} md={6}>
+                <div>
+                  <Text type="secondary">Group Name</Text>
+                  <div style={{ fontSize: '16px', fontWeight: 'bold' }}>{results.groupInfo.name}</div>
+                </div>
+              </Col>
+              <Col xs={24} sm={12} md={6}>
+                <div>
+                  <Text type="secondary">Start Date</Text>
+                  <div style={{ fontSize: '16px', fontWeight: 'bold' }}>{formatDate(results.groupInfo.startDate)}</div>
+                </div>
+              </Col>
+              <Col xs={24} sm={12} md={6}>
+                <div>
+                  <Text type="secondary">End Date</Text>
+                  <div style={{ fontSize: '16px', fontWeight: 'bold' }}>{formatDate(results.groupInfo.endDate)}</div>
+                </div>
+              </Col>
+              <Col xs={24} sm={12} md={6}>
+                <div>
+                  <Text type="secondary">Group Type</Text>
+                  <div style={{ fontSize: '16px', fontWeight: 'bold' }}>
+                    <Tag color="blue">{results.groupInfo.type.charAt(0).toUpperCase() + results.groupInfo.type.slice(1)}</Tag>
+                  </div>
+                </div>
+              </Col>
+              <Col xs={24} sm={12} md={6}>
+                <div>
+                  <Text type="secondary">Duration</Text>
+                  <div style={{ fontSize: '16px', fontWeight: 'bold' }}>{tripDuration} days</div>
+                </div>
+              </Col>
+            </Row>
+          </Card>
+
           {/* Client and Company Information */}
           <Row gutter={[24, 24]} style={{ marginBottom: '32px' }}>
             <Col xs={24} lg={12}>
@@ -395,6 +603,26 @@ const QuotationResults: React.FC<QuotationResultsProps> = ({ results, onBack, on
             </div>
           </Card>
 
+          {/* Enhanced Daily Services & Itinerary */}
+          <Card
+            title={
+              <Space>
+                <ClockCircleOutlined style={{ color: '#eb2f96' }} />
+                <span>Daily Itinerary & Services ({enhancedServices.length} activities)</span>
+              </Space>
+            }
+            style={{ marginBottom: '32px' }}
+            headStyle={{ borderBottom: '2px solid #f0f0f0' }}
+          >
+            <Table
+              columns={enhancedServiceColumns}
+              dataSource={enhancedServices}
+              pagination={{ pageSize: 15, showSizeChanger: true, showQuickJumper: true }}
+              scroll={{ x: 1000 }}
+              size="small"
+            />
+          </Card>
+
           {/* Hotels Table */}
           <Card
             title={
@@ -471,25 +699,6 @@ const QuotationResults: React.FC<QuotationResultsProps> = ({ results, onBack, on
             />
           </Card>
 
-          {/* Services Table */}
-          <Card
-            title={
-              <Space>
-                <EnvironmentOutlined style={{ color: '#eb2f96' }} />
-                <span>Services ({results.services.length})</span>
-              </Space>
-            }
-            style={{ marginBottom: '32px' }}
-            headStyle={{ borderBottom: '2px solid #f0f0f0' }}
-          >
-            <Table
-              columns={serviceColumns}
-              dataSource={results.services.map((service, index) => ({ ...service, key: index }))}
-              pagination={{ pageSize: 10, showSizeChanger: true, showQuickJumper: true }}
-              scroll={{ x: 1000 }}
-            />
-          </Card>
-
           {/* Offer Details */}
           <Card
             title={
@@ -498,6 +707,7 @@ const QuotationResults: React.FC<QuotationResultsProps> = ({ results, onBack, on
                 <span>Offer Details</span>
               </Space>
             }
+            style={{ marginBottom: '32px' }}
             headStyle={{ borderBottom: '2px solid #f0f0f0' }}
           >
             <Row gutter={[16, 16]}>
@@ -509,6 +719,64 @@ const QuotationResults: React.FC<QuotationResultsProps> = ({ results, onBack, on
                 </Col>
               ))}
             </Row>
+          </Card>
+
+          {/* Offer Exclusions */}
+          <Card
+            title={
+              <Space>
+                <ExclamationCircleOutlined style={{ color: '#ff4d4f' }} />
+                <span>Offer Exclusions</span>
+              </Space>
+            }
+            style={{ marginBottom: '32px' }}
+            headStyle={{ borderBottom: '2px solid #f0f0f0' }}
+          >
+            <div style={{ 
+              background: '#fff2f0', 
+              border: '1px solid #ffccc7', 
+              borderRadius: '8px', 
+              padding: '16px',
+              marginBottom: '16px'
+            }}>
+              <Text strong style={{ color: '#ff4d4f' }}>
+                ⚠️ Important: The following items are NOT included in this quotation
+              </Text>
+            </div>
+            
+            <List
+              dataSource={offerExclusions}
+              renderItem={(item, index) => (
+                <List.Item style={{ padding: '8px 0', borderBottom: '1px solid #f0f0f0' }}>
+                  <Space align="start">
+                    <Text strong style={{ color: '#ff4d4f', minWidth: '20px' }}>
+                      {index + 1}.
+                    </Text>
+                    <Text>{item}</Text>
+                  </Space>
+                </List.Item>
+              )}
+              style={{ 
+                background: '#fafafa', 
+                padding: '16px', 
+                borderRadius: '8px',
+                border: '1px solid #d9d9d9'
+              }}
+            />
+            
+            <div style={{ 
+              marginTop: '16px', 
+              padding: '12px', 
+              background: '#f6ffed', 
+              border: '1px solid #b7eb8f',
+              borderRadius: '6px'
+            }}>
+              <Text style={{ fontSize: '12px', color: '#389e0d' }}>
+                <strong>Note:</strong> Please review these exclusions carefully. Any additional services or changes 
+                to the itinerary may result in extra charges. For clarification on any excluded items, 
+                please contact your Great Line Travel representative.
+              </Text>
+            </div>
           </Card>
         </Card>
       </div>
