@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Card, Table, Button, Typography, Space, Row, Col, Statistic, Input, Tag } from 'antd';
-import { PlusOutlined, EyeOutlined, ArrowLeftOutlined, UserOutlined, CalendarOutlined, CheckCircleOutlined } from '@ant-design/icons';
+import { PlusOutlined, EyeOutlined, EditOutlined, ArrowLeftOutlined, UserOutlined, CalendarOutlined, CheckCircleOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import { IQuotationListItem, IClientInfo } from '../types';
 
@@ -11,13 +11,15 @@ interface QuotationListPageProps {
   client: IClientInfo;
   onAddNew: () => void;
   onViewQuotation: (quotationId: string) => void;
+  onEditQuotation?: (quotationId: string) => void;
   onBack: () => void;
 }
 
 const QuotationListPage: React.FC<QuotationListPageProps> = ({ 
   client, 
   onAddNew, 
-  onViewQuotation, 
+  onViewQuotation,
+  onEditQuotation,
   onBack 
 }) => {
   const [searchText, setSearchText] = useState('');
@@ -69,6 +71,21 @@ const QuotationListPage: React.FC<QuotationListPageProps> = ({
 
   const publishedCount = mockQuotations.filter(q => q.state === 'published').length;
 
+  const handleActionClick = (record: any) => {
+    if (record.state === 'draft') {
+      // For draft quotations, go to edit mode (quotation form)
+      if (onEditQuotation) {
+        onEditQuotation(record.id);
+      } else {
+        // Fallback to add new if onEditQuotation is not provided
+        onAddNew();
+      }
+    } else {
+      // For published quotations, view results
+      onViewQuotation(record.id);
+    }
+  };
+
   const columns = [
     {
       title: 'Group Name',
@@ -119,11 +136,16 @@ const QuotationListPage: React.FC<QuotationListPageProps> = ({
       render: (_, record: any) => (
         <Button
           type="primary"
-          ghost
-          icon={<EyeOutlined />}
-          onClick={() => onViewQuotation(record.id)}
+          ghost={record.state === 'published'}
+          icon={record.state === 'draft' ? <EditOutlined /> : <EyeOutlined />}
+          onClick={() => handleActionClick(record)}
+          style={record.state === 'draft' ? { 
+            backgroundColor: '#fa8c16', 
+            borderColor: '#fa8c16', 
+            color: 'white' 
+          } : {}}
         >
-          View Results
+          {record.state === 'draft' ? 'Edit' : 'View Results'}
         </Button>
       ),
     },

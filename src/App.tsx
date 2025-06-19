@@ -21,6 +21,7 @@ function App() {
   const [quotationResults, setQuotationResults] = useState<IQuotationResults | null>(null);
   const [selectedQuotationId, setSelectedQuotationId] = useState<string | null>(null);
   const [selectedGroupName, setSelectedGroupName] = useState<string | null>(null);
+  const [isEditingQuotation, setIsEditingQuotation] = useState<boolean>(false);
 
   const handleLogin = (email: string, password: string) => {
     // Mock user creation
@@ -90,11 +91,14 @@ function App() {
   };
 
   const handleAddNewQuotation = () => {
+    setIsEditingQuotation(false);
+    setSelectedQuotationId(null);
     setCurrentView('quotationForm');
   };
 
   const handleViewQuotation = (quotationId: string) => {
     setSelectedQuotationId(quotationId);
+    setIsEditingQuotation(false);
     // Get the group name based on quotation ID
     const groupNames: { [key: string]: string } = {
       '1': 'European Heritage Tour',
@@ -104,6 +108,20 @@ function App() {
     };
     setSelectedGroupName(groupNames[quotationId] || 'Travel Group');
     generateMockResults(groupNames[quotationId] || 'Travel Group');
+  };
+
+  const handleEditQuotation = (quotationId: string) => {
+    setSelectedQuotationId(quotationId);
+    setIsEditingQuotation(true);
+    // Get the group name for editing
+    const groupNames: { [key: string]: string } = {
+      '1': 'European Heritage Tour',
+      '2': 'Business Conference Trip',
+      '3': 'Cultural Heritage Tour',
+      '4': 'Adventure Sports Package'
+    };
+    setSelectedGroupName(groupNames[quotationId] || 'Travel Group');
+    setCurrentView('quotationForm');
   };
 
   const generateMockResults = (groupName?: string) => {
@@ -118,7 +136,7 @@ function App() {
     };
 
     const mockResults: IQuotationResults = {
-      id: '1',
+      id: selectedQuotationId || '1',
       client: currentClient,
       greatLineInfo: greatLineInfo,
       groupInfo: mockGroupInfo,
@@ -345,6 +363,7 @@ function App() {
     setSelectedQuotationId(null);
     setSelectedGroupName(null);
     setCurrentClient(null);
+    setIsEditingQuotation(false);
   };
 
   const handleBackToList = () => {
@@ -352,6 +371,7 @@ function App() {
     setQuotationResults(null);
     setSelectedQuotationId(null);
     setSelectedGroupName(null);
+    setIsEditingQuotation(false);
   };
 
   const handleBackToForm = () => {
@@ -421,6 +441,7 @@ function App() {
             client={currentClient}
             onAddNew={handleAddNewQuotation}
             onViewQuotation={handleViewQuotation}
+            onEditQuotation={handleEditQuotation}
             onBack={handleBackToMyClients}
           />
         )}
