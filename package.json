@@ -11,11 +11,12 @@
   },
   "dependencies": {
     "@ant-design/icons": "^5.2.6",
+    "ag-grid-community": "^32.2.1",
+    "ag-grid-react": "^32.2.1",
     "antd": "^5.12.8",
     "dayjs": "^1.11.10",
     "lucide-react": "^0.517.0",
     "react": "^19.0.0",
-    "react-data-grid": "^7.0.0-beta.56",
     "react-dom": "^19.0.0"
   },
   "devDependencies": {

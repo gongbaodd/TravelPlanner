@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import {
   Form,
   Input,
@@ -25,10 +25,12 @@ import {
   TableOutlined,
   TeamOutlined
 } from '@ant-design/icons';
-import {DataGrid,  Column } from 'react-data-grid';
+import { AgGridReact } from 'ag-grid-react';
+import { ColDef, GridReadyEvent, CellValueChangedEvent } from 'ag-grid-community';
 import dayjs from 'dayjs';
 import { IQuotation, TGroupType } from '../types';
-import 'react-data-grid/lib/styles.css';
+import 'ag-grid-community/styles/ag-grid.css';
+import 'ag-grid-community/styles/ag-theme-alpine.css';
 
 const { Title, Text } = Typography;
 const { TextArea } = Input;
@@ -113,212 +115,312 @@ const QuotationForm: React.FC<QuotationFormProps> = ({ onSubmit, onBack }) => {
     }
   };
 
-  const handleRowsChange = useCallback((newRows: DailyQuoteRow[]) => {
-    // Calculate single room cost sum automatically
-    const updatedRows = newRows.map(row => ({
-      ...row,
-      singleRoomCostSum: row.singleRoomCount * row.singleRoomCost
-    }));
-    setRows(updatedRows);
-  }, []);
-
-  const columns: Column<DailyQuoteRow>[] = [
-    {
-      key: 'date',
-      name: 'Date',
-      width: 120,
-      resizable: true,
-      sortable: true,
-      editor: 'textEditor'
-    },
-    {
-      key: 'duration',
-      name: 'Duration',
-      width: 80,
-      resizable: true,
-      sortable: true,
-      editor: 'textEditor',
-      renderCell: ({ row }) => <span>{row.duration} day(s)</span>
-    },
-    {
-      key: 'city',
-      name: 'City',
-      width: 120,
-      resizable: true,
-      sortable: true,
-      editor: 'textEditor'
-    },
-    {
-      key: 'transport',
-      name: 'Transport (EUR)',
-      width: 130,
-      resizable: true,
-      sortable: true,
-      editor: 'textEditor',
-      renderCell: ({ row }) => <span>€{row.transport.toLocaleString()}</span>
-    },
-    {
-      key: 'hotelStars',
-      name: 'Hotel Stars',
-      width: 100,
-      resizable: true,
-      sortable: true,
-      editor: 'textEditor',
-      renderCell: ({ row }) => <span>{'⭐'.repeat(row.hotelStars)}</span>
-    },
-    {
-      key: 'referenceHotel',
-      name: 'Reference Hotel',
-      width: 150,
-      resizable: true,
-      sortable: true,
-      editor: 'textEditor'
-    },
-    {
-      key: 'hotelCost',
-      name: 'Hotel Cost',
-      width: 110,
-      resizable: true,
-      sortable: true,
-      editor: 'textEditor',
-      renderCell: ({ row }) => <span>€{row.hotelCost.toLocaleString()}</span>
-    },
-    {
-      key: 'singleRoomCount',
-      name: 'Single Room Count',
-      width: 140,
-      resizable: true,
-      sortable: true,
-      editor: 'textEditor'
-    },
-    {
-      key: 'singleRoomCost',
-      name: 'Single Room Cost',
-      width: 140,
-      resizable: true,
-      sortable: true,
-      editor: 'textEditor',
-      renderCell: ({ row }) => <span>€{row.singleRoomCost.toLocaleString()}</span>
-    },
-    {
-      key: 'singleRoomCostSum',
-      name: 'Single Room Sum',
-      width: 140,
-      resizable: true,
-      sortable: true,
-      renderCell: ({ row }) => (
-        <span style={{ fontWeight: 'bold', color: '#1890ff' }}>
-          €{row.singleRoomCostSum.toLocaleString()}
-        </span>
-      )
-    },
-    {
-      key: 'breakfast',
-      name: 'Breakfast',
-      width: 100,
-      resizable: true,
-      sortable: true,
-      editor: 'textEditor',
-      renderCell: ({ row }) => <span>€{row.breakfast.toLocaleString()}</span>
-    },
-    {
-      key: 'lunch',
-      name: 'Lunch',
-      width: 100,
-      resizable: true,
-      sortable: true,
-      editor: 'textEditor',
-      renderCell: ({ row }) => <span>€{row.lunch.toLocaleString()}</span>
-    },
-    {
-      key: 'dinner',
-      name: 'Dinner',
-      width: 100,
-      resizable: true,
-      sortable: true,
-      editor: 'textEditor',
-      renderCell: ({ row }) => <span>€{row.dinner.toLocaleString()}</span>
-    },
-    {
-      key: 'attractionName',
-      name: 'Attraction Name',
-      width: 150,
-      resizable: true,
-      sortable: true,
-      editor: 'textEditor'
-    },
-    {
-      key: 'attractionCost',
-      name: 'Attraction Cost',
-      width: 130,
-      resizable: true,
-      sortable: true,
-      editor: 'textEditor',
-      renderCell: ({ row }) => <span>€{row.attractionCost.toLocaleString()}</span>
-    },
-    {
-      key: 'guideCost',
-      name: 'Guide Cost',
-      width: 110,
-      resizable: true,
-      sortable: true,
-      editor: 'textEditor',
-      renderCell: ({ row }) => <span>€{row.guideCost.toLocaleString()}</span>
-    },
-    {
-      key: 'waterCost',
-      name: 'Water Cost',
-      width: 110,
-      resizable: true,
-      sortable: true,
-      editor: 'textEditor',
-      renderCell: ({ row }) => <span>€{row.waterCost.toLocaleString()}</span>
-    },
-    {
-      key: 'localGuideTip',
-      name: 'Local Guide Tip',
-      width: 130,
-      resizable: true,
-      sortable: true,
-      editor: 'textEditor',
-      renderCell: ({ row }) => <span>€{row.localGuideTip.toLocaleString()}</span>
-    },
-    {
-      key: 'localGuideSalary',
-      name: 'Local Guide Salary',
-      width: 150,
-      resizable: true,
-      sortable: true,
-      editor: 'textEditor',
-      renderCell: ({ row }) => <span>€{row.localGuideSalary.toLocaleString()}</span>
-    },
-    {
-      key: 'localGuideAccommodation',
-      name: 'Local Guide Accommodation',
-      width: 180,
-      resizable: true,
-      sortable: true,
-      editor: 'textEditor',
-      renderCell: ({ row }) => <span>€{row.localGuideAccommodation.toLocaleString()}</span>
-    },
-    {
-      key: 'localGuideMeal',
-      name: 'Local Guide Meal',
-      width: 140,
-      resizable: true,
-      sortable: true,
-      editor: 'textEditor',
-      renderCell: ({ row }) => <span>€{row.localGuideMeal.toLocaleString()}</span>
-    },
-    {
-      key: 'extra',
-      name: 'Extra',
-      width: 150,
-      resizable: true,
-      sortable: true,
-      editor: 'textEditor'
+  // Currency cell renderer
+  const currencyCellRenderer = (params: any) => {
+    if (params.value === null || params.value === undefined || params.value === 0) {
+      return '';
     }
-  ];
+    return `€${params.value.toLocaleString()}`;
+  };
+
+  // Stars cell renderer
+  const starsCellRenderer = (params: any) => {
+    if (params.value === null || params.value === undefined) {
+      return '';
+    }
+    return '⭐'.repeat(Math.max(1, Math.min(5, params.value)));
+  };
+
+  // Duration cell renderer
+  const durationCellRenderer = (params: any) => {
+    if (params.value === null || params.value === undefined) {
+      return '';
+    }
+    return `${params.value} day(s)`;
+  };
+
+  const columnDefs: ColDef<DailyQuoteRow>[] = useMemo(() => [
+    {
+      field: 'date',
+      headerName: 'Date',
+      width: 120,
+      editable: true,
+      resizable: true,
+      sortable: true
+    },
+    {
+      field: 'duration',
+      headerName: 'Duration',
+      width: 100,
+      editable: true,
+      resizable: true,
+      sortable: true,
+      cellRenderer: durationCellRenderer,
+      cellEditor: 'agNumberCellEditor',
+      cellEditorParams: {
+        min: 1,
+        max: 30
+      }
+    },
+    {
+      field: 'city',
+      headerName: 'City',
+      width: 120,
+      editable: true,
+      resizable: true,
+      sortable: true
+    },
+    {
+      field: 'transport',
+      headerName: 'Transport (EUR)',
+      width: 140,
+      editable: true,
+      resizable: true,
+      sortable: true,
+      cellRenderer: currencyCellRenderer,
+      cellEditor: 'agNumberCellEditor',
+      cellEditorParams: {
+        min: 0
+      }
+    },
+    {
+      field: 'hotelStars',
+      headerName: 'Hotel Stars',
+      width: 110,
+      editable: true,
+      resizable: true,
+      sortable: true,
+      cellRenderer: starsCellRenderer,
+      cellEditor: 'agSelectCellEditor',
+      cellEditorParams: {
+        values: [1, 2, 3, 4, 5]
+      }
+    },
+    {
+      field: 'referenceHotel',
+      headerName: 'Reference Hotel',
+      width: 160,
+      editable: true,
+      resizable: true,
+      sortable: true
+    },
+    {
+      field: 'hotelCost',
+      headerName: 'Hotel Cost',
+      width: 120,
+      editable: true,
+      resizable: true,
+      sortable: true,
+      cellRenderer: currencyCellRenderer,
+      cellEditor: 'agNumberCellEditor',
+      cellEditorParams: {
+        min: 0
+      }
+    },
+    {
+      field: 'singleRoomCount',
+      headerName: 'Single Room Count',
+      width: 150,
+      editable: true,
+      resizable: true,
+      sortable: true,
+      cellEditor: 'agNumberCellEditor',
+      cellEditorParams: {
+        min: 0
+      }
+    },
+    {
+      field: 'singleRoomCost',
+      headerName: 'Single Room Cost',
+      width: 150,
+      editable: true,
+      resizable: true,
+      sortable: true,
+      cellRenderer: currencyCellRenderer,
+      cellEditor: 'agNumberCellEditor',
+      cellEditorParams: {
+        min: 0
+      }
+    },
+    {
+      field: 'singleRoomCostSum',
+      headerName: 'Single Room Sum',
+      width: 150,
+      resizable: true,
+      sortable: true,
+      editable: false,
+      cellRenderer: (params: any) => (
+        <span style={{ fontWeight: 'bold', color: '#1890ff' }}>
+          €{(params.value || 0).toLocaleString()}
+        </span>
+      ),
+      cellStyle: { backgroundColor: '#f0f8ff' }
+    },
+    {
+      field: 'breakfast',
+      headerName: 'Breakfast',
+      width: 110,
+      editable: true,
+      resizable: true,
+      sortable: true,
+      cellRenderer: currencyCellRenderer,
+      cellEditor: 'agNumberCellEditor',
+      cellEditorParams: {
+        min: 0
+      }
+    },
+    {
+      field: 'lunch',
+      headerName: 'Lunch',
+      width: 110,
+      editable: true,
+      resizable: true,
+      sortable: true,
+      cellRenderer: currencyCellRenderer,
+      cellEditor: 'agNumberCellEditor',
+      cellEditorParams: {
+        min: 0
+      }
+    },
+    {
+      field: 'dinner',
+      headerName: 'Dinner',
+      width: 110,
+      editable: true,
+      resizable: true,
+      sortable: true,
+      cellRenderer: currencyCellRenderer,
+      cellEditor: 'agNumberCellEditor',
+      cellEditorParams: {
+        min: 0
+      }
+    },
+    {
+      field: 'attractionName',
+      headerName: 'Attraction Name',
+      width: 160,
+      editable: true,
+      resizable: true,
+      sortable: true
+    },
+    {
+      field: 'attractionCost',
+      headerName: 'Attraction Cost',
+      width: 140,
+      editable: true,
+      resizable: true,
+      sortable: true,
+      cellRenderer: currencyCellRenderer,
+      cellEditor: 'agNumberCellEditor',
+      cellEditorParams: {
+        min: 0
+      }
+    },
+    {
+      field: 'guideCost',
+      headerName: 'Guide Cost',
+      width: 120,
+      editable: true,
+      resizable: true,
+      sortable: true,
+      cellRenderer: currencyCellRenderer,
+      cellEditor: 'agNumberCellEditor',
+      cellEditorParams: {
+        min: 0
+      }
+    },
+    {
+      field: 'waterCost',
+      headerName: 'Water Cost',
+      width: 120,
+      editable: true,
+      resizable: true,
+      sortable: true,
+      cellRenderer: currencyCellRenderer,
+      cellEditor: 'agNumberCellEditor',
+      cellEditorParams: {
+        min: 0
+      }
+    },
+    {
+      field: 'localGuideTip',
+      headerName: 'Local Guide Tip',
+      width: 140,
+      editable: true,
+      resizable: true,
+      sortable: true,
+      cellRenderer: currencyCellRenderer,
+      cellEditor: 'agNumberCellEditor',
+      cellEditorParams: {
+        min: 0
+      }
+    },
+    {
+      field: 'localGuideSalary',
+      headerName: 'Local Guide Salary',
+      width: 160,
+      editable: true,
+      resizable: true,
+      sortable: true,
+      cellRenderer: currencyCellRenderer,
+      cellEditor: 'agNumberCellEditor',
+      cellEditorParams: {
+        min: 0
+      }
+    },
+    {
+      field: 'localGuideAccommodation',
+      headerName: 'Local Guide Accommodation',
+      width: 190,
+      editable: true,
+      resizable: true,
+      sortable: true,
+      cellRenderer: currencyCellRenderer,
+      cellEditor: 'agNumberCellEditor',
+      cellEditorParams: {
+        min: 0
+      }
+    },
+    {
+      field: 'localGuideMeal',
+      headerName: 'Local Guide Meal',
+      width: 150,
+      editable: true,
+      resizable: true,
+      sortable: true,
+      cellRenderer: currencyCellRenderer,
+      cellEditor: 'agNumberCellEditor',
+      cellEditorParams: {
+        min: 0
+      }
+    },
+    {
+      field: 'extra',
+      headerName: 'Extra',
+      width: 150,
+      editable: true,
+      resizable: true,
+      sortable: true
+    }
+  ], []);
+
+  const onCellValueChanged = useCallback((event: CellValueChangedEvent<DailyQuoteRow>) => {
+    const { data, colDef } = event;
+    
+    // Auto-calculate single room cost sum when count or cost changes
+    if (colDef.field === 'singleRoomCount' || colDef.field === 'singleRoomCost') {
+      const updatedData = {
+        ...data,
+        singleRoomCostSum: (data.singleRoomCount || 0) * (data.singleRoomCost || 0)
+      };
+      
+      setRows(prevRows => 
+        prevRows.map(row => 
+          row.id === data.id ? updatedData : row
+        )
+      );
+    }
+  }, []);
 
   const convertRowsToQuotes = (rows: DailyQuoteRow[]) => {
     // Filter out completely empty rows
@@ -423,7 +525,7 @@ const QuotationForm: React.FC<QuotationFormProps> = ({ onSubmit, onBack }) => {
                   Travel Quotation System
                 </Title>
                 <Text style={{ color: 'rgba(255,255,255,0.8)', fontSize: '16px' }}>
-                  Create detailed travel quotations with data grid
+                  Create detailed travel quotations with AG Grid
                 </Text>
               </div>
               <Button
@@ -626,7 +728,7 @@ const QuotationForm: React.FC<QuotationFormProps> = ({ onSubmit, onBack }) => {
               </Row>
             </Card>
 
-            {/* Daily Quotes Data Grid */}
+            {/* Daily Quotes AG Grid */}
             <Card
               title={
                 <Space>
@@ -663,19 +765,28 @@ const QuotationForm: React.FC<QuotationFormProps> = ({ onSubmit, onBack }) => {
               style={{ marginBottom: '24px' }}
               headStyle={{ borderBottom: '2px solid #f0f0f0' }}
             >
-              <div style={{ height: '400px', width: '100%' }}>
-                <DataGrid
-                  columns={columns}
-                  rows={rows}
-                  onRowsChange={handleRowsChange}
-                  className="rdg-light"
-                  style={{ 
-                    height: '100%',
-                    border: '1px solid #d9d9d9',
-                    borderRadius: '6px'
+              <div className="ag-theme-alpine" style={{ height: '400px', width: '100%' }}>
+                <AgGridReact<DailyQuoteRow>
+                  rowData={rows}
+                  columnDefs={columnDefs}
+                  defaultColDef={{
+                    sortable: true,
+                    filter: true,
+                    resizable: true,
+                    editable: true
                   }}
-                  rowKeyGetter={(row) => row.id}
-                  enableVirtualization
+                  onCellValueChanged={onCellValueChanged}
+                  suppressRowClickSelection={true}
+                  enableFillHandle={true}
+                  undoRedoCellEditing={true}
+                  undoRedoCellEditingLimit={20}
+                  stopEditingWhenCellsLoseFocus={true}
+                  enterNavigatesVertically={true}
+                  enterNavigatesVerticallyAfterEdit={true}
+                  suppressMovableColumns={false}
+                  animateRows={true}
+                  rowSelection="multiple"
+                  getRowId={(params) => params.data.id}
                 />
               </div>
               
@@ -687,15 +798,17 @@ const QuotationForm: React.FC<QuotationFormProps> = ({ onSubmit, onBack }) => {
                 fontSize: '12px',
                 color: '#666'
               }}>
-                <strong>💡 Instructions:</strong>
+                <strong>💡 AG Grid Features:</strong>
                 <br />
                 • Click on any cell to edit the value
                 <br />
                 • Single Room Cost Sum is calculated automatically (Count × Cost)
                 <br />
-                • Fill in at least one row with valid data to generate quotation
+                • Use Ctrl+C/Ctrl+V to copy/paste data from Excel
                 <br />
-                • Use "Add Row" to add more days, "Remove Last" to remove the last row
+                • Drag column headers to reorder, resize columns by dragging edges
+                <br />
+                • Use Tab/Enter to navigate between cells, Undo/Redo with Ctrl+Z/Ctrl+Y
               </div>
             </Card>
 
