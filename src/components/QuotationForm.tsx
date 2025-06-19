@@ -12,7 +12,8 @@ import {
   Typography,
   message,
   Tooltip,
-  Select
+  Select,
+  Tag
 } from 'antd';
 import {
   PlusOutlined,
@@ -23,7 +24,10 @@ import {
   InfoCircleOutlined,
   ArrowLeftOutlined,
   TableOutlined,
-  TeamOutlined
+  TeamOutlined,
+  HistoryOutlined,
+  StarOutlined,
+  DollarOutlined
 } from '@ant-design/icons';
 import { AgGridReact } from 'ag-grid-react';
 import { ColDef, GridReadyEvent, CellValueChangedEvent } from 'ag-grid-community';
@@ -66,6 +70,110 @@ interface DailyQuoteRow {
   extra: string;
 }
 
+interface HotelSuggestion {
+  name: string;
+  city: string;
+  stars: number;
+  averagePrice: number;
+  priceRange: { min: number; max: number };
+  bookingCount: number;
+  lastUpdated: Date;
+  confidence: 'High' | 'Medium' | 'Low';
+  recentPrices: number[];
+}
+
+// Mock historical hotel data
+const mockHotelData: HotelSuggestion[] = [
+  {
+    name: 'Hotel Artemide',
+    city: 'Rome',
+    stars: 4,
+    averagePrice: 118,
+    priceRange: { min: 110, max: 125 },
+    bookingCount: 12,
+    lastUpdated: new Date('2024-01-15'),
+    confidence: 'High',
+    recentPrices: [115, 120, 122]
+  },
+  {
+    name: 'Hotel Louvre Rivoli',
+    city: 'Paris',
+    stars: 4,
+    averagePrice: 165,
+    priceRange: { min: 155, max: 175 },
+    bookingCount: 8,
+    lastUpdated: new Date('2024-01-10'),
+    confidence: 'High',
+    recentPrices: [160, 165, 170]
+  },
+  {
+    name: 'Hotel Casa Fuster',
+    city: 'Barcelona',
+    stars: 5,
+    averagePrice: 195,
+    priceRange: { min: 180, max: 210 },
+    bookingCount: 6,
+    lastUpdated: new Date('2024-01-05'),
+    confidence: 'Medium',
+    recentPrices: [185, 195, 205]
+  },
+  {
+    name: 'Hotel Adlon Kempinski',
+    city: 'Berlin',
+    stars: 5,
+    averagePrice: 280,
+    priceRange: { min: 260, max: 300 },
+    bookingCount: 4,
+    lastUpdated: new Date('2023-12-20'),
+    confidence: 'Medium',
+    recentPrices: [275, 280, 285]
+  },
+  {
+    name: 'Hotel Sacher',
+    city: 'Vienna',
+    stars: 5,
+    averagePrice: 320,
+    priceRange: { min: 300, max: 340 },
+    bookingCount: 3,
+    lastUpdated: new Date('2023-12-15'),
+    confidence: 'Low',
+    recentPrices: [315, 320, 325]
+  },
+  {
+    name: 'Hotel Danieli',
+    city: 'Venice',
+    stars: 5,
+    averagePrice: 450,
+    priceRange: { min: 420, max: 480 },
+    bookingCount: 5,
+    lastUpdated: new Date('2024-01-08'),
+    confidence: 'Medium',
+    recentPrices: [440, 450, 460]
+  },
+  {
+    name: 'Hotel Grande Bretagne',
+    city: 'Athens',
+    stars: 5,
+    averagePrice: 220,
+    priceRange: { min: 200, max: 240 },
+    bookingCount: 7,
+    lastUpdated: new Date('2024-01-12'),
+    confidence: 'High',
+    recentPrices: [215, 220, 225]
+  },
+  {
+    name: 'Hotel Ritz Madrid',
+    city: 'Madrid',
+    stars: 5,
+    averagePrice: 380,
+    priceRange: { min: 350, max: 410 },
+    bookingCount: 6,
+    lastUpdated: new Date('2024-01-07'),
+    confidence: 'Medium',
+    recentPrices: [370, 380, 390]
+  }
+];
+
 const QuotationForm: React.FC<QuotationFormProps> = ({ onSubmit, onBack }) => {
   const [form] = Form.useForm();
 
@@ -95,10 +203,34 @@ const QuotationForm: React.FC<QuotationFormProps> = ({ onSubmit, onBack }) => {
     extra: ''
   });
 
-  // Initialize with 10 empty rows
-  const [rows, setRows] = useState<DailyQuoteRow[]>(() => 
-    Array.from({ length: 10 }, (_, index) => createEmptyRow(index))
-  );
+  // Initialize with one mock row
+  const [rows, setRows] = useState<DailyQuoteRow[]>([
+    {
+      ...createEmptyRow(0),
+      date: '2024-03-15',
+      duration: 3,
+      city: 'Rome',
+      transport: 150,
+      hotelStars: 4,
+      referenceHotel: 'Hotel Artemide',
+      hotelCost: 118,
+      singleRoomCount: 2,
+      singleRoomCost: 45,
+      singleRoomCostSum: 90,
+      breakfast: 25,
+      lunch: 35,
+      dinner: 45,
+      attractionName: 'Colosseum and Vatican Museums',
+      attractionCost: 65,
+      guideCost: 200,
+      waterCost: 5,
+      localGuideTip: 20,
+      localGuideSalary: 150,
+      localGuideAccommodation: 80,
+      localGuideMeal: 40,
+      extra: 'City tour included'
+    }
+  ]);
 
   const addRow = () => {
     const newRow = createEmptyRow(rows.length);
@@ -113,6 +245,160 @@ const QuotationForm: React.FC<QuotationFormProps> = ({ onSubmit, onBack }) => {
     } else {
       message.warning('At least one row is required');
     }
+  };
+
+  // Find hotel suggestion for tooltip
+  const findHotelSuggestion = (hotelName: string): HotelSuggestion | null => {
+    if (!hotelName) return null;
+    return mockHotelData.find(hotel => 
+      hotel.name.toLowerCase().includes(hotelName.toLowerCase()) ||
+      hotelName.toLowerCase().includes(hotel.name.toLowerCase())
+    ) || null;
+  };
+
+  // Render historical tooltip for hotel
+  const renderHistoricalTooltip = (hotel: HotelSuggestion) => (
+    <div style={{ maxWidth: '320px' }}>
+      <div style={{ 
+        display: 'flex', 
+        alignItems: 'center', 
+        marginBottom: '12px',
+        fontSize: '14px',
+        fontWeight: 'bold',
+        color: '#1890ff'
+      }}>
+        <HistoryOutlined style={{ marginRight: '8px' }} />
+        Historical Pricing Data
+      </div>
+      
+      <div style={{ marginBottom: '8px' }}>
+        <Text strong style={{ color: '#52c41a', fontSize: '16px' }}>
+          💰 Recommended: €{hotel.averagePrice}/night
+        </Text>
+      </div>
+      
+      <div style={{ marginBottom: '8px' }}>
+        <Text>
+          📊 Price Range: €{hotel.priceRange.min} - €{hotel.priceRange.max}
+        </Text>
+      </div>
+      
+      <div style={{ marginBottom: '8px' }}>
+        <Text>
+          📈 Recent Prices: {hotel.recentPrices.map(price => `€${price}`).join(' → ')}
+        </Text>
+      </div>
+      
+      <div style={{ marginBottom: '8px' }}>
+        <Space>
+          <Text>🎯 Confidence:</Text>
+          <Tag color={
+            hotel.confidence === 'High' ? 'green' : 
+            hotel.confidence === 'Medium' ? 'orange' : 'red'
+          }>
+            {hotel.confidence}
+          </Tag>
+          <Text type="secondary">({hotel.bookingCount} bookings)</Text>
+        </Space>
+      </div>
+      
+      <div style={{ 
+        display: 'flex', 
+        alignItems: 'center',
+        fontSize: '12px',
+        color: '#666',
+        marginTop: '12px',
+        paddingTop: '8px',
+        borderTop: '1px solid #f0f0f0'
+      }}>
+        <StarOutlined style={{ marginRight: '4px' }} />
+        📍 {hotel.city} • {'⭐'.repeat(hotel.stars)} • 
+        Updated: {dayjs(hotel.lastUpdated).format('MMM DD, YYYY')}
+      </div>
+      
+      <div style={{ 
+        marginTop: '8px',
+        padding: '6px 8px',
+        background: '#f0f8ff',
+        borderRadius: '4px',
+        fontSize: '11px',
+        color: '#1890ff'
+      }}>
+        💡 Click on Hotel Cost cell to auto-fill with recommended price
+      </div>
+    </div>
+  );
+
+  // Custom cell renderer for hotel reference with tooltip
+  const hotelReferenceCellRenderer = (params: any) => {
+    const { value } = params;
+    const hotelSuggestion = findHotelSuggestion(value);
+    
+    if (!value) {
+      return (
+        <Input
+          value={value || ''}
+          onChange={(e) => params.setValue(e.target.value)}
+          placeholder="Enter hotel name..."
+          style={{ border: 'none', padding: 0 }}
+        />
+      );
+    }
+
+    const cellContent = (
+      <div style={{ 
+        display: 'flex', 
+        alignItems: 'center', 
+        justifyContent: 'space-between',
+        width: '100%',
+        cursor: hotelSuggestion ? 'help' : 'default'
+      }}>
+        <Input
+          value={value || ''}
+          onChange={(e) => params.setValue(e.target.value)}
+          style={{ 
+            border: 'none', 
+            padding: 0,
+            background: hotelSuggestion ? '#f0f8ff' : 'transparent'
+          }}
+        />
+        {hotelSuggestion && (
+          <div style={{ 
+            display: 'flex', 
+            alignItems: 'center',
+            marginLeft: '8px',
+            fontSize: '12px',
+            color: '#1890ff'
+          }}>
+            <DollarOutlined style={{ marginRight: '2px' }} />
+            €{hotelSuggestion.averagePrice}
+          </div>
+        )}
+      </div>
+    );
+
+    if (hotelSuggestion) {
+      return (
+        <Tooltip
+          title={renderHistoricalTooltip(hotelSuggestion)}
+          placement="topLeft"
+          overlayStyle={{ maxWidth: '350px' }}
+          mouseEnterDelay={0.3}
+        >
+          <div style={{ 
+            width: '100%',
+            background: 'linear-gradient(90deg, #f0f8ff 0%, #e6f7ff 100%)',
+            padding: '2px 4px',
+            borderRadius: '3px',
+            border: '1px solid #91d5ff'
+          }}>
+            {cellContent}
+          </div>
+        </Tooltip>
+      );
+    }
+
+    return cellContent;
   };
 
   // Currency cell renderer
@@ -199,10 +485,11 @@ const QuotationForm: React.FC<QuotationFormProps> = ({ onSubmit, onBack }) => {
     {
       field: 'referenceHotel',
       headerName: 'Reference Hotel',
-      width: 160,
+      width: 200,
       editable: true,
       resizable: true,
-      sortable: true
+      sortable: true,
+      cellRenderer: hotelReferenceCellRenderer
     },
     {
       field: 'hotelCost',
@@ -215,6 +502,14 @@ const QuotationForm: React.FC<QuotationFormProps> = ({ onSubmit, onBack }) => {
       cellEditor: 'agNumberCellEditor',
       cellEditorParams: {
         min: 0
+      },
+      onCellClicked: (params) => {
+        // Auto-fill with recommended price if hotel suggestion exists
+        const hotelSuggestion = findHotelSuggestion(params.data.referenceHotel);
+        if (hotelSuggestion && params.data.hotelCost === 0) {
+          params.setValue(hotelSuggestion.averagePrice);
+          message.success(`Auto-filled with recommended price: €${hotelSuggestion.averagePrice}`);
+        }
       }
     },
     {
@@ -525,7 +820,7 @@ const QuotationForm: React.FC<QuotationFormProps> = ({ onSubmit, onBack }) => {
                   Travel Quotation System
                 </Title>
                 <Text style={{ color: 'rgba(255,255,255,0.8)', fontSize: '16px' }}>
-                  Create detailed travel quotations with AG Grid
+                  Create detailed travel quotations with smart hotel price suggestions
                 </Text>
               </div>
               <Button
@@ -798,17 +1093,17 @@ const QuotationForm: React.FC<QuotationFormProps> = ({ onSubmit, onBack }) => {
                 fontSize: '12px',
                 color: '#666'
               }}>
-                <strong>💡 AG Grid Features:</strong>
+                <strong>💡 Smart Hotel Price Features:</strong>
                 <br />
-                • Click on any cell to edit the value
+                • <strong>Price Suggestions:</strong> Hotels with historical data show highlighted background and price hints
                 <br />
-                • Single Room Cost Sum is calculated automatically (Count × Cost)
+                • <strong>Hover Tooltips:</strong> Hover over highlighted hotel names to see detailed pricing history and recommendations
                 <br />
-                • Use Ctrl+C/Ctrl+V to copy/paste data from Excel
+                • <strong>Auto-fill:</strong> Click on Hotel Cost cell for hotels with suggestions to auto-fill recommended price
                 <br />
-                • Drag column headers to reorder, resize columns by dragging edges
+                • <strong>Excel Integration:</strong> Use Ctrl+C/Ctrl+V to copy/paste data from Excel
                 <br />
-                • Use Tab/Enter to navigate between cells, Undo/Redo with Ctrl+Z/Ctrl+Y
+                • <strong>Navigation:</strong> Use Tab/Enter to navigate, Ctrl+Z/Ctrl+Y for Undo/Redo
               </div>
             </Card>
 
