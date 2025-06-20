@@ -11,7 +11,8 @@ import {
   Tag,
   Space,
   Divider,
-  List
+  List,
+  message
 } from 'antd';
 import {
   ArrowLeftOutlined,
@@ -28,7 +29,9 @@ import {
   HomeOutlined,
   ClockCircleOutlined,
   FlagOutlined,
-  ExclamationCircleOutlined
+  ExclamationCircleOutlined,
+  FileWordOutlined,
+  CloudUploadOutlined
 } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import { IQuotationResults } from '../types';
@@ -45,6 +48,10 @@ const QuotationResults: React.FC<QuotationResultsProps> = ({ results, onBack, on
   const formatCurrency = (amount: number) => `€${amount.toLocaleString()}`;
   const formatDate = (date: Date) => dayjs(date).format('MMM DD, YYYY');
   const formatTime = (date: Date) => dayjs(date).format('HH:mm');
+
+  const handlePublishAndDownload = () => {
+    message.info('Publish & Download Word feature will be implemented soon');
+  };
 
   // Generate enhanced services with meals and times
   const generateEnhancedServices = () => {
@@ -397,6 +404,25 @@ const QuotationResults: React.FC<QuotationResultsProps> = ({ results, onBack, on
                 </Text>
               </div>
               <Space>
+                <Button
+                  type="primary"
+                  icon={<FileWordOutlined />}
+                  onClick={handlePublishAndDownload}
+                  size="large"
+                  style={{
+                    background: 'linear-gradient(135deg, #722ed1 0%, #531dab 100%)',
+                    border: 'none',
+                    borderRadius: '8px',
+                    fontWeight: 'bold',
+                    boxShadow: '0 4px 12px rgba(114, 46, 209, 0.3)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px'
+                  }}
+                >
+                  <CloudUploadOutlined />
+                  Publish & Download Word
+                </Button>
                 <Button
                   type="primary"
                   ghost

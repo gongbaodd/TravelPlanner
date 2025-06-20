@@ -27,7 +27,9 @@ import {
   TeamOutlined,
   HistoryOutlined,
   StarOutlined,
-  DollarOutlined
+  DollarOutlined,
+  DownloadOutlined,
+  FileExcelOutlined
 } from '@ant-design/icons';
 import { AgGridReact } from 'ag-grid-react';
 import { ColDef, GridReadyEvent, CellValueChangedEvent } from 'ag-grid-community';
@@ -245,6 +247,14 @@ const QuotationForm: React.FC<QuotationFormProps> = ({ onSubmit, onBack }) => {
     } else {
       message.warning('At least one row is required');
     }
+  };
+
+  const handleDownloadTemplate = () => {
+    message.info('Template download feature will be implemented soon');
+  };
+
+  const handlePasteExcel = () => {
+    message.info('Paste Excel feature will be implemented soon');
   };
 
   // Find hotel suggestion for tooltip
@@ -1038,6 +1048,30 @@ const QuotationForm: React.FC<QuotationFormProps> = ({ onSubmit, onBack }) => {
               }
               extra={
                 <Space>
+                  <Button
+                    type="default"
+                    icon={<DownloadOutlined />}
+                    onClick={handleDownloadTemplate}
+                    size="large"
+                    style={{
+                      borderColor: '#52c41a',
+                      color: '#52c41a'
+                    }}
+                  >
+                    Download Template
+                  </Button>
+                  <Button
+                    type="default"
+                    icon={<FileExcelOutlined />}
+                    onClick={handlePasteExcel}
+                    size="large"
+                    style={{
+                      borderColor: '#1890ff',
+                      color: '#1890ff'
+                    }}
+                  >
+                    Paste Excel
+                  </Button>
                   <Button
                     type="primary"
                     icon={<PlusOutlined />}
